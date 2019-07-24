@@ -26,6 +26,6 @@ jobs:
             - "/root/.stack"
             - ".stack-work"
       - store_artifacts:
-          path: ~/.local/bin/t-exe
-          destination: t-exe
+          path: ~/.local/bin/t
+          destination: t
 
