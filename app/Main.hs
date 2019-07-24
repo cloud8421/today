@@ -92,16 +92,19 @@ optsParser = info (helper <*> programOptions) description
       hsubparser (listTasksCommand <> createTaskCommand <> deleteTaskCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
-      command "list" (info (pure ListTasks) (progDesc "List current tasks"))
+      command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
+      command "ls" (info (pure ListTasks) (progDesc "List current tasks"))
     createTaskCommand :: Mod CommandFields SubCommand
     createTaskCommand =
-      command "create" (info createOptions (progDesc "Create a new task"))
+      command "create" (info createOptions (progDesc "Create a new task")) <>
+      command "c" (info createOptions (progDesc "Create a new task"))
     createOptions :: Parser SubCommand
     createOptions =
       CreateTask <$> many (textArgument (help "Text of the new task"))
     deleteTaskCommand :: Mod CommandFields SubCommand
     deleteTaskCommand =
-      command "delete" (info deleteOptions (progDesc "Delete an existing task"))
+      command "delete" (info deleteOptions (progDesc "Delete an existing task")) <>
+      command "d" (info deleteOptions (progDesc "Delete an existing task"))
     deleteOptions :: Parser SubCommand
     deleteOptions =
       DeleteTask <$> argument auto (help "ID of the task to delete")
