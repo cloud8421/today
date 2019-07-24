@@ -32,15 +32,27 @@ displayInboxTasks tasks = mapM_ displayTask (toList tasks)
   where
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid White]
-      T.putStr (padLeft (pack (printf "%d " id)))
-      T.putStr (statusIcon task)
+      T.putStr (padLeft (pack (printf "%d. " id)))
+      displayStatus (status task)
+      T.putStr " "
+      setSGR [SetColor Foreground Vivid White]
       T.putStrLn (text task)
-    statusIcon task =
-      case status task of
-        Done -> "[DONE] "
-        Pending -> "[Pending] "
-        Progress -> "[Progress] "
-        Cancelled -> "[Cancelled] "
+
+displayStatus :: Status -> IO ()
+displayStatus status =
+  case status of
+    Done -> do
+      setSGR [SetColor Foreground Vivid Green]
+      T.putStr "✔"
+    Pending -> do
+      setSGR [SetColor Foreground Vivid Magenta]
+      T.putStr "◻"
+    Progress -> do
+      setSGR [SetColor Foreground Vivid White]
+      T.putStr "…"
+    Cancelled -> do
+      setSGR [SetColor Foreground Vivid Red]
+      T.putStr "✖"
 
 displayTasks :: Tasks -> IO ()
 displayTasks tasks = do
@@ -48,6 +60,7 @@ displayTasks tasks = do
   displayInboxHeader tasks
   spacer
   displayInboxTasks tasks
+  spacer
 
 displayError :: String -> IO ()
 displayError err = do
