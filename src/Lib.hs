@@ -7,6 +7,7 @@ module Lib
   , totalCount
   , doneCount
   , toList
+  , addTask
   , Task(..)
   , Status(..)
   , Tasks
@@ -32,6 +33,18 @@ data Task =
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
 type Tasks = Map.HashMap Int Task
+
+newTaskId :: Tasks -> Int
+newTaskId tasks =
+  case Map.keys tasks of
+    [] -> 1
+    keys -> Prelude.maximum keys + 1
+
+addTask :: Tasks -> Text -> Tasks
+addTask tasks text =
+  let taskId = newTaskId tasks
+      task = Task Pending text
+   in Map.insert taskId task tasks
 
 defaultTasks :: Tasks
 defaultTasks =

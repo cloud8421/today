@@ -25,6 +25,7 @@ dependencies:
 - bytestring
 - directory
 - extra
+- optparse-applicative
 - text
 - unordered-containers
 
