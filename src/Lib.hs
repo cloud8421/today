@@ -6,7 +6,9 @@ module Lib
   ( defaultTasks
   , totalCount
   , doneCount
-  , Task
+  , toList
+  , Task(..)
+  , Status(..)
   , Tasks
   ) where
 
@@ -44,3 +46,6 @@ doneCount tasks =
   let operator count Task {status = Done} = count + 1
       operator count task = count
    in Map.foldl' operator 0 tasks
+
+toList :: Tasks -> [(Int, Task)]
+toList = Map.toList
