@@ -12,6 +12,7 @@ import qualified Data.ByteString.Lazy as B
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Data.Text.Lazy.IO as I
+import Data.Time.Clock (UTCTime, getCurrentTime)
 import Options.Applicative
 import System.Directory
 import qualified Tasks
@@ -49,15 +50,15 @@ listTasks taskFilePath = do
     Left err -> Ui.displayError err
     Right tasks -> Ui.displayTasks tasks
 
-addTask :: Text -> FilePath -> IO ()
-addTask text taskFilePath = do
+addTask :: Text -> UTCTime -> FilePath -> IO ()
+addTask text currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
       Ui.displayTasks newTasks
-      where newTasks = Tasks.addTask tasks text
+      where newTasks = Tasks.addTask tasks text currentTime
 
 deleteTask :: Int -> FilePath -> IO ()
 deleteTask taskId taskFilePath = do
@@ -69,13 +70,13 @@ deleteTask taskId taskFilePath = do
       Ui.displayTasks newTasks
       where newTasks = Tasks.removeTask tasks taskId
 
-checkTask :: Int -> FilePath -> IO ()
-checkTask taskId taskFilePath = do
+checkTask :: Int -> UTCTime -> FilePath -> IO ()
+checkTask taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks ->
-      case Tasks.checkTask tasks taskId of
+      case Tasks.checkTask tasks taskId currentTime of
         Left err -> Ui.displayError err
         Right newTasks -> do
           createTaskFile taskFilePath newTasks
@@ -132,10 +133,11 @@ optsParser = info (helper <*> programOptions) description
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
-  ensureTaskFile (taskFilePath opts) Tasks.defaultTasks
+  currentTime <- liftIO getCurrentTime
+  ensureTaskFile (taskFilePath opts) (Tasks.defaultTasks currentTime)
   case subCommand opts of
-    AddTask textFrags -> addTask text (taskFilePath opts)
+    AddTask textFrags -> addTask text currentTime (taskFilePath opts)
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks (taskFilePath opts)
     DeleteTask id -> deleteTask id (taskFilePath opts)
-    CheckTask id -> checkTask id (taskFilePath opts)
+    CheckTask id -> checkTask id currentTime (taskFilePath opts)

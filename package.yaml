@@ -27,6 +27,7 @@ dependencies:
 - extra
 - optparse-applicative
 - text
+- time
 - unordered-containers
 
 library:

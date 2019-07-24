@@ -18,6 +18,7 @@ module Tasks
 import Data.Aeson
 import qualified Data.HashMap.Strict as Map
 import Data.Text
+import Data.Time.Clock (UTCTime)
 import GHC.Generics
 
 data Status
@@ -31,6 +32,7 @@ data Task =
   Task
     { status :: Status
     , text :: Text
+    , lastUpdate :: UTCTime
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
@@ -42,25 +44,32 @@ newTaskId tasks =
     [] -> 1
     keys -> Prelude.maximum keys + 1
 
-addTask :: Tasks -> Text -> Tasks
-addTask tasks text =
+addTask :: Tasks -> Text -> UTCTime -> Tasks
+addTask tasks text currentTime =
   let taskId = newTaskId tasks
-      task = Task Pending text
+      task = Task Pending text currentTime
    in Map.insert taskId task tasks
 
 removeTask :: Tasks -> Int -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
 
-checkTask :: Tasks -> Int -> Either String Tasks
-checkTask tasks taskId =
+checkTask :: Tasks -> Int -> UTCTime -> Either String Tasks
+checkTask tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
-    Just task -> Right (Map.adjust (\t -> t {status = Done}) taskId tasks)
+    Just task ->
+      Right
+        (Map.adjust
+           (\t -> t {status = Done, lastUpdate = currentTime})
+           taskId
+           tasks)
 
-defaultTasks :: Tasks
-defaultTasks =
+defaultTasks :: UTCTime -> Tasks
+defaultTasks currentTime =
   Map.fromList
-    [(1, Task Done "Install t"), (2, Task Pending "Learn how to use t")]
+    [ (1, Task Done "Install t" currentTime)
+    , (2, Task Pending "Learn how to use t" currentTime)
+    ]
 
 totalCount :: Tasks -> Int
 totalCount = Map.size
