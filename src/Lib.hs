@@ -4,12 +4,14 @@
 
 module Lib
   ( defaultTasks
+  , totalCount
+  , doneCount
   , Task
   , Tasks
   ) where
 
 import Data.Aeson
-import Data.HashMap.Strict
+import qualified Data.HashMap.Strict as Map
 import Data.Text
 import GHC.Generics
 
@@ -27,7 +29,18 @@ data Task =
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
-type Tasks = HashMap Int Task
+type Tasks = Map.HashMap Int Task
 
 defaultTasks :: Tasks
-defaultTasks = fromList [(1, Task Pending "Learn how to use t")]
+defaultTasks =
+  Map.fromList
+    [(1, Task Done "Install t"), (2, Task Pending "Learn how to use t")]
+
+totalCount :: Tasks -> Int
+totalCount = Map.size
+
+doneCount :: Tasks -> Int
+doneCount tasks =
+  let operator count Task {status = Done} = count + 1
+      operator count task = count
+   in Map.foldl' operator 0 tasks
