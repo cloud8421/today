@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Lib
+module Tasks
   ( defaultTasks
   , totalCount
   , doneCount

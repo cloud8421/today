@@ -7,8 +7,8 @@ module Ui
 
 import Data.Text
 import qualified Data.Text.IO as T
-import Lib
 import System.Console.ANSI
+import Tasks
 import Text.Printf
 
 spacer :: IO ()

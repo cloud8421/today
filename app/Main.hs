@@ -12,9 +12,9 @@ import qualified Data.ByteString.Lazy as B
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Data.Text.Lazy.IO as I
-import Lib
 import Options.Applicative
 import System.Directory
+import qualified Tasks
 import qualified Ui
 
 data Opts =
@@ -24,21 +24,21 @@ data Opts =
     }
 
 data SubCommand
-  = CreateTask [Text]
+  = AddTask [Text]
   | ListTasks
   | DeleteTask Int
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
 
-createTaskFile :: FilePath -> Tasks -> IO ()
+createTaskFile :: FilePath -> Tasks.Tasks -> IO ()
 createTaskFile path tasks = I.writeFile path (encodeToLazyText tasks)
 
-ensureTaskFile :: FilePath -> Tasks -> IO ()
+ensureTaskFile :: FilePath -> Tasks.Tasks -> IO ()
 ensureTaskFile path tasks =
   ifM (doesFileExist path) (return ()) (createTaskFile path tasks)
 
-loadTasksFromFile :: FilePath -> IO (Either String Tasks)
+loadTasksFromFile :: FilePath -> IO (Either String Tasks.Tasks)
 loadTasksFromFile path = eitherDecode <$> B.readFile path
 
 listTasks :: FilePath -> IO ()
@@ -48,15 +48,15 @@ listTasks taskFilePath = do
     Left err -> Ui.displayError err
     Right tasks -> Ui.displayTasks tasks
 
-createTask :: Text -> FilePath -> IO ()
-createTask text taskFilePath = do
+addTask :: Text -> FilePath -> IO ()
+addTask text taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
       Ui.displayTasks newTasks
-      where newTasks = addTask tasks text
+      where newTasks = Tasks.addTask tasks text
 
 deleteTask :: Int -> FilePath -> IO ()
 deleteTask taskId taskFilePath = do
@@ -66,7 +66,7 @@ deleteTask taskId taskFilePath = do
     Right tasks -> do
       createTaskFile taskFilePath newTasks
       Ui.displayTasks newTasks
-      where newTasks = removeTask tasks taskId
+      where newTasks = Tasks.removeTask tasks taskId
 
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
@@ -89,18 +89,17 @@ optsParser = info (helper <*> programOptions) description
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
-      hsubparser (listTasksCommand <> createTaskCommand <> deleteTaskCommand)
+      hsubparser (listTasksCommand <> addTaskCommand <> deleteTaskCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
       command "ls" (info (pure ListTasks) (progDesc "List current tasks"))
-    createTaskCommand :: Mod CommandFields SubCommand
-    createTaskCommand =
-      command "create" (info createOptions (progDesc "Create a new task")) <>
-      command "c" (info createOptions (progDesc "Create a new task"))
-    createOptions :: Parser SubCommand
-    createOptions =
-      CreateTask <$> many (textArgument (help "Text of the new task"))
+    addTaskCommand :: Mod CommandFields SubCommand
+    addTaskCommand =
+      command "add" (info addOptions (progDesc "add a new task")) <>
+      command "a" (info addOptions (progDesc "add a new task"))
+    addOptions :: Parser SubCommand
+    addOptions = AddTask <$> many (textArgument (help "Text of the new task"))
     deleteTaskCommand :: Mod CommandFields SubCommand
     deleteTaskCommand =
       command "delete" (info deleteOptions (progDesc "Delete an existing task")) <>
@@ -112,9 +111,9 @@ optsParser = info (helper <*> programOptions) description
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
-  ensureTaskFile (taskFilePath opts) defaultTasks
+  ensureTaskFile (taskFilePath opts) Tasks.defaultTasks
   case subCommand opts of
-    CreateTask textFrags -> createTask text (taskFilePath opts)
+    AddTask textFrags -> addTask text (taskFilePath opts)
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks (taskFilePath opts)
     DeleteTask id -> deleteTask id (taskFilePath opts)
