@@ -25,7 +25,7 @@ data Task =
     { status :: Status
     , text :: Text
     }
-  deriving (Generic, Read, Show, Eq, ToJSON)
+  deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
 type Tasks = HashMap Int Task
 
