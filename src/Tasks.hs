@@ -5,7 +5,7 @@
 module Tasks
   ( defaultTasks
   , totalCount
-  , doneCount
+  , countByStatus
   , toList
   , addTask
   , removeTask
@@ -65,10 +65,12 @@ defaultTasks =
 totalCount :: Tasks -> Int
 totalCount = Map.size
 
-doneCount :: Tasks -> Int
-doneCount tasks =
-  let operator count Task {status = Done} = count + 1
-      operator count task = count
+countByStatus :: Status -> Tasks -> Int
+countByStatus s tasks =
+  let operator count task =
+        if status task == s
+          then count + 1
+          else count
    in Map.foldl' operator 0 tasks
 
 toList :: Tasks -> [(Int, Task)]
