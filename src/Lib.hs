@@ -8,6 +8,7 @@ module Lib
   , doneCount
   , toList
   , addTask
+  , removeTask
   , Task(..)
   , Status(..)
   , Tasks
@@ -45,6 +46,9 @@ addTask tasks text =
   let taskId = newTaskId tasks
       task = Task Pending text
    in Map.insert taskId task tasks
+
+removeTask :: Tasks -> Int -> Tasks
+removeTask tasks taskId = Map.delete taskId tasks
 
 defaultTasks :: Tasks
 defaultTasks =

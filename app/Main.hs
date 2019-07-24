@@ -26,6 +26,7 @@ data Opts =
 data SubCommand
   = CreateTask [Text]
   | ListTasks
+  | DeleteTask Int
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
@@ -57,6 +58,16 @@ createTask text taskFilePath = do
       Ui.displayTasks newTasks
       where newTasks = addTask tasks text
 
+deleteTask :: Int -> FilePath -> IO ()
+deleteTask taskId taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks -> do
+      createTaskFile taskFilePath newTasks
+      Ui.displayTasks newTasks
+      where newTasks = removeTask tasks taskId
+
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
 
@@ -78,7 +89,7 @@ optsParser = info (helper <*> programOptions) description
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
-      hsubparser (listTasksCommand <> createTaskCommand)
+      hsubparser (listTasksCommand <> createTaskCommand <> deleteTaskCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks"))
@@ -88,6 +99,12 @@ optsParser = info (helper <*> programOptions) description
     createOptions :: Parser SubCommand
     createOptions =
       CreateTask <$> many (textArgument (help "Text of the new task"))
+    deleteTaskCommand :: Mod CommandFields SubCommand
+    deleteTaskCommand =
+      command "delete" (info deleteOptions (progDesc "Delete an existing task"))
+    deleteOptions :: Parser SubCommand
+    deleteOptions =
+      DeleteTask <$> argument auto (help "ID of the task to delete")
 
 main :: IO ()
 main = do
@@ -97,3 +114,4 @@ main = do
     CreateTask textFrags -> createTask text (taskFilePath opts)
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks (taskFilePath opts)
+    DeleteTask id -> deleteTask id (taskFilePath opts)
