@@ -31,10 +31,11 @@ displayInboxTasks :: Tasks -> IO ()
 displayInboxTasks tasks = mapM_ displayTask (toList tasks)
   where
     displayTask (id, task) = do
-      setSGR [SetColor Foreground Vivid White]
-      T.putStr (padLeft (pack (printf "%d. " id)))
-      displayStatus (status task)
+      setSGR [SetColor Foreground Vivid Black]
+      T.putStr (padLeft (padLeft (pack (printf "%d." id))))
       T.putStr " "
+      displayStatus (status task)
+      T.putStr "  "
       setSGR [SetColor Foreground Vivid White]
       T.putStrLn (text task)
 
@@ -58,7 +59,6 @@ displayTasks :: Tasks -> IO ()
 displayTasks tasks = do
   spacer
   displayInboxHeader tasks
-  spacer
   displayInboxTasks tasks
   spacer
 
