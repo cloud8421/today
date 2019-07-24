@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -9,16 +10,22 @@ import Data.Aeson (eitherDecode)
 import Data.Aeson.Text (encodeToLazyText)
 import qualified Data.ByteString.Lazy as B
 import Data.Semigroup ((<>))
+import Data.Text as T
 import qualified Data.Text.Lazy.IO as I
 import Lib
 import Options.Applicative
 import System.Directory
 import qualified Ui
 
-newtype Config =
-  Config
+data Opts =
+  Opts
     { taskFilePath :: FilePath
+    , subCommand :: SubCommand
     }
+
+data SubCommand
+  = CreateTask [Text]
+  | ListTasks
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
@@ -33,6 +40,26 @@ ensureTaskFile path tasks =
 loadTasksFromFile :: FilePath -> IO (Either String Tasks)
 loadTasksFromFile path = eitherDecode <$> B.readFile path
 
+listTasks :: FilePath -> IO ()
+listTasks taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks -> Ui.displayTasks tasks
+
+createTask :: Text -> FilePath -> IO ()
+createTask text taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks -> do
+      createTaskFile taskFilePath newTasks
+      Ui.displayTasks newTasks
+      where newTasks = addTask tasks text
+
+textArgument :: Mod ArgumentFields String -> Parser Text
+textArgument = fmap pack . strArgument
+
 taskFilePathOption :: Parser FilePath
 taskFilePathOption =
   strOption
@@ -41,38 +68,32 @@ taskFilePathOption =
      showDefault <>
      help "Which taskfile to use")
 
-parser :: Parser (IO ())
-parser = hsubparser (listTasksCommand <> createTaskCommand)
+optsParser :: ParserInfo Opts
+optsParser = info (helper <*> programOptions) description
   where
+    description :: InfoMod Opts
+    description =
+      fullDesc <> progDesc "T - CLI task manager" <>
+      header "T - CLI task manager"
+    programOptions :: Parser Opts
+    programOptions =
+      Opts <$> taskFilePathOption <*>
+      hsubparser (listTasksCommand <> createTaskCommand)
+    listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
-      command "list" (info (listTasks <$> configParser) listTasksDesc)
+      command "list" (info (pure ListTasks) (progDesc "List current tasks"))
+    createTaskCommand :: Mod CommandFields SubCommand
     createTaskCommand =
-      command "create" (info (createTask <$> configParser) createTaskDesc)
-    configParser = Config <$> taskFilePathOption
-    listTasksDesc = progDesc "List all available tasks"
-    createTaskDesc = progDesc "Create a new task"
-
-listTasks :: Config -> IO ()
-listTasks config = do
-  ensureTaskFile (taskFilePath config) defaultTasks
-  result <- loadTasksFromFile (taskFilePath config)
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> Ui.displayTasks tasks
-
-createTask :: Config -> IO ()
-createTask config = do
-  ensureTaskFile (taskFilePath config) defaultTasks
-  result <- loadTasksFromFile (taskFilePath config)
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> do
-      createTaskFile (taskFilePath config) newTasks
-      Ui.displayTasks newTasks
-      where newTasks = addTask tasks "My new task"
+      command "create" (info createOptions (progDesc "Create a new task"))
+    createOptions :: Parser SubCommand
+    createOptions =
+      CreateTask <$> many (textArgument (help "Text of the new task"))
 
 main :: IO ()
-main = join $ execParser opts
-  where
-    opts = info (parser <**> helper) desc
-    desc = fullDesc <> progDesc "CLI based task manager" <> header "T"
+main = do
+  (opts :: Opts) <- execParser optsParser
+  ensureTaskFile (taskFilePath opts) defaultTasks
+  case subCommand opts of
+    CreateTask textFrags -> createTask text (taskFilePath opts)
+      where text = T.intercalate " " textFrags
+    ListTasks -> listTasks (taskFilePath opts)
