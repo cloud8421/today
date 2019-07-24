@@ -24,6 +24,7 @@ dependencies:
 - ansi-terminal
 - bytestring
 - directory
+- extra
 - text
 - unordered-containers
 

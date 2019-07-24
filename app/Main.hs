@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad.Extra (ifM)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (eitherDecode)
 import Data.Aeson.Text (encodeToLazyText)
@@ -15,19 +16,15 @@ defaultTaskFilePath = "./tasks.json"
 createTaskFile :: FilePath -> Tasks -> IO ()
 createTaskFile path tasks = I.writeFile path (encodeToLazyText tasks)
 
-ensureTaskFile :: Bool -> FilePath -> Tasks -> IO ()
-ensureTaskFile taskFileExists path tasks =
-  if taskFileExists
-    then return ()
-    else createTaskFile path tasks
+ensureTaskFile :: FilePath -> Tasks -> IO ()
+ensureTaskFile path tasks =
+  ifM (doesFileExist path) (return ()) (createTaskFile path tasks)
 
 loadTasksFromFile :: FilePath -> IO (Either String Tasks)
 loadTasksFromFile path = eitherDecode <$> B.readFile path
 
 main :: IO ()
 main = do
-  taskFileExists <- liftIO $ doesFileExist defaultTaskFilePath
-  ensureTaskFile taskFileExists defaultTaskFilePath defaultTasks
   loadTasks defaultTaskFilePath
   where
     loadTasks path = do
@@ -39,3 +36,4 @@ main = do
       setSGR [SetColor Foreground Vivid Red]
       print tasks
       setSGR [Reset]
+  ensureTaskFile defaultTaskFilePath defaultTasks
