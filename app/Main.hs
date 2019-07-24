@@ -27,6 +27,7 @@ data SubCommand
   = AddTask [Text]
   | ListTasks
   | DeleteTask Int
+  | CheckTask Int
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
@@ -68,6 +69,18 @@ deleteTask taskId taskFilePath = do
       Ui.displayTasks newTasks
       where newTasks = Tasks.removeTask tasks taskId
 
+checkTask :: Int -> FilePath -> IO ()
+checkTask taskId taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks ->
+      case Tasks.checkTask tasks taskId of
+        Left err -> Ui.displayError err
+        Right newTasks -> do
+          createTaskFile taskFilePath newTasks
+          Ui.displayTasks newTasks
+
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
 
@@ -89,7 +102,9 @@ optsParser = info (helper <*> programOptions) description
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
-      hsubparser (listTasksCommand <> addTaskCommand <> deleteTaskCommand)
+      hsubparser
+        (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
+         checkTaskCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
@@ -107,6 +122,12 @@ optsParser = info (helper <*> programOptions) description
     deleteOptions :: Parser SubCommand
     deleteOptions =
       DeleteTask <$> argument auto (help "ID of the task to delete")
+    checkTaskCommand :: Mod CommandFields SubCommand
+    checkTaskCommand =
+      command "check" (info checkOptions (progDesc "Check an existing task")) <>
+      command "c" (info checkOptions (progDesc "Check an existing task"))
+    checkOptions :: Parser SubCommand
+    checkOptions = CheckTask <$> argument auto (help "ID of the task to check")
 
 main :: IO ()
 main = do
@@ -117,3 +138,4 @@ main = do
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks (taskFilePath opts)
     DeleteTask id -> deleteTask id (taskFilePath opts)
+    CheckTask id -> checkTask id (taskFilePath opts)

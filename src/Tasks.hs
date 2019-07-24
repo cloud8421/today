@@ -9,6 +9,7 @@ module Tasks
   , toList
   , addTask
   , removeTask
+  , checkTask
   , Task(..)
   , Status(..)
   , Tasks
@@ -49,6 +50,12 @@ addTask tasks text =
 
 removeTask :: Tasks -> Int -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
+
+checkTask :: Tasks -> Int -> Either String Tasks
+checkTask tasks taskId =
+  case Map.lookup taskId tasks of
+    Nothing -> Left "Task not found"
+    Just task -> Right (Map.adjust (\t -> t {status = Done}) taskId tasks)
 
 defaultTasks :: Tasks
 defaultTasks =
