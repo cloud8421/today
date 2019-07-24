@@ -1,22 +1,33 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Lib
-  ( createTaskFile
+  ( defaultTasks
+  , Task
+  , Tasks
   ) where
 
+import Data.Aeson
+import Data.HashMap.Strict
 import Data.Text
+import GHC.Generics
 
 data Status
   = Pending
   | Progress
   | Done
   | Cancelled
-  deriving (Read, Show, Eq)
+  deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
 data Task =
   Task
     { status :: Status
     , text :: Text
     }
-  deriving (Read, Show, Eq)
+  deriving (Generic, Read, Show, Eq, ToJSON)
 
-createTaskFile :: FilePath -> IO ()
-createTaskFile path = writeFile path "[]"
+type Tasks = HashMap Int Task
+
+defaultTasks :: Tasks
+defaultTasks = fromList [(1, Task Pending "Learn how to use t")]
