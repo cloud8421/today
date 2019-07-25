@@ -37,7 +37,7 @@ formatContext = T.cons '@'
 
 displayGroupHeader :: Context -> Tasks -> IO ()
 displayGroupHeader context tasks = do
-  setSGR [SetColor Foreground Vivid White]
+  setSGR [Reset]
   TIO.putStr (padLeft (formatContext context))
   TIO.putStr " "
   setSGR [SetColor Foreground Vivid Black]
@@ -66,7 +66,7 @@ displayStats tasks = do
   TIO.putStr (padLeft (T.pack (printf "%d " (countByStatus Done tasks))))
   setSGR [SetColor Foreground Vivid Black]
   TIO.putStr "done · "
-  setSGR [SetColor Foreground Vivid White]
+  setSGR [Reset]
   TIO.putStr (T.pack (printf "%d " (countByStatus Progress tasks)))
   setSGR [SetColor Foreground Vivid Black]
   TIO.putStr "in progress · "
@@ -90,7 +90,7 @@ displayStatus status =
       setSGR [SetColor Foreground Vivid Magenta]
       TIO.putStr "◻"
     Progress -> do
-      setSGR [SetColor Foreground Vivid White]
+      setSGR [Reset]
       TIO.putStr "…"
     Cancelled -> do
       setSGR [SetColor Foreground Vivid Red]
@@ -103,10 +103,10 @@ displayText status text =
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr text
     Pending -> do
-      setSGR [SetColor Foreground Vivid White]
+      setSGR [Reset]
       TIO.putStr text
     Progress -> do
-      setSGR [SetColor Foreground Vivid White]
+      setSGR [Reset]
       TIO.putStr text
     Cancelled -> do
       setSGR [SetColor Foreground Vivid Black]
