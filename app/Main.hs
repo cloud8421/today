@@ -28,9 +28,9 @@ data Opts =
 data SubCommand
   = AddTask Text [Text]
   | ListTasks
-  | DeleteTask Int
-  | CheckTask Int
-  | CancelTask Int
+  | DeleteTask Tasks.TaskId
+  | CheckTask Tasks.TaskId
+  | CancelTask Tasks.TaskId
   | Today Text
 
 defaultTaskFilePath :: FilePath
@@ -66,7 +66,7 @@ addTask text currentTime taskFilePath taskContext = do
       Ui.render newTasks currentTime
       where newTasks = Tasks.addTask tasks text currentTime taskContext
 
-deleteTask :: Int -> Elapsed -> FilePath -> IO ()
+deleteTask :: Tasks.TaskId -> Elapsed -> FilePath -> IO ()
 deleteTask taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
@@ -76,7 +76,7 @@ deleteTask taskId currentTime taskFilePath = do
       Ui.render newTasks currentTime
       where newTasks = Tasks.removeTask tasks taskId
 
-updateTaskStatus :: Tasks.Status -> Int -> Elapsed -> FilePath -> IO ()
+updateTaskStatus :: Tasks.Status -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
 updateTaskStatus newStatus taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of

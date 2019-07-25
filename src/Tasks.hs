@@ -16,6 +16,7 @@ module Tasks
   , Context
   , Task(..)
   , Status(..)
+  , TaskId
   , Tasks
   ) where
 
@@ -46,9 +47,11 @@ data Task =
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
-type Tasks = Map.HashMap Int Task
+type TaskId = Int
 
-newTaskId :: Tasks -> Int
+type Tasks = Map.HashMap TaskId Task
+
+newTaskId :: Tasks -> TaskId
 newTaskId tasks =
   case Map.keys tasks of
     [] -> 1
@@ -60,10 +63,10 @@ addTask tasks text currentTime context =
       task = Task Pending text currentTime context
    in Map.insert taskId task tasks
 
-removeTask :: Tasks -> Int -> Tasks
+removeTask :: Tasks -> TaskId -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
 
-updateTaskStatus :: Status -> Tasks -> Int -> Elapsed -> Either String Tasks
+updateTaskStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
 updateTaskStatus newStatus tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
