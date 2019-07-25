@@ -62,8 +62,11 @@ displayTasks tasks currentTime = mapM_ displayTask (toList tasks)
 
 displayStats :: Tasks -> IO ()
 displayStats tasks = do
+  setSGR [SetColor Foreground Vivid Black]
+  TIO.putStrLn
+    (padLeft (T.pack (printf "%0.f%% of all tasks complete." percentDone)))
   setSGR [SetColor Foreground Vivid Green]
-  TIO.putStr (padLeft (T.pack (printf "%d " (countByStatus Done tasks))))
+  TIO.putStr (padLeft (T.pack (printf "%d " doneCount)))
   setSGR [SetColor Foreground Vivid Black]
   TIO.putStr "done · "
   setSGR [Reset]
@@ -79,6 +82,10 @@ displayStats tasks = do
   setSGR [SetColor Foreground Vivid Black]
   TIO.putStr "cancelled"
   spacer
+  where
+    doneCount = countByStatus Done tasks
+    percentDone :: Float
+    percentDone = 100 * fromIntegral doneCount / fromIntegral (totalCount tasks)
 
 displayStatus :: Status -> IO ()
 displayStatus status =
