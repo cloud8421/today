@@ -31,6 +31,7 @@ data SubCommand
   | DeleteTask Int
   | CheckTask Int
   | CancelTask Int
+  | Today Text
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
@@ -55,7 +56,7 @@ listTasks currentTime taskFilePath = do
     Left err -> Ui.displayError err
     Right tasks -> Ui.render tasks currentTime
 
-addTask :: Text -> Elapsed -> FilePath -> Text -> IO ()
+addTask :: Text -> Elapsed -> FilePath -> Tasks.Context -> IO ()
 addTask text currentTime taskFilePath taskContext = do
   result <- loadTasksFromFile taskFilePath
   case result of
@@ -86,6 +87,13 @@ updateTaskStatus newStatus taskId currentTime taskFilePath = do
         Right newTasks -> do
           createTaskFile taskFilePath newTasks
           Ui.render newTasks currentTime
+
+showToday :: Tasks.Context -> FilePath -> IO ()
+showToday context taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks -> Ui.showToday context tasks
 
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
@@ -120,7 +128,8 @@ optsParser = info (helper <*> programOptions) description
       hsubparser
         (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
          checkTaskCommand <>
-         cancelTaskCommand)
+         cancelTaskCommand <>
+         todayCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
@@ -152,6 +161,17 @@ optsParser = info (helper <*> programOptions) description
     cancelOptions :: Parser SubCommand
     cancelOptions =
       CancelTask <$> argument auto (help "ID of the task to cancel")
+    todayCommand :: Mod CommandFields SubCommand
+    todayCommand =
+      command
+        "today"
+        (info
+           todayOptions
+           (progDesc "Generate a today summary for the given context"))
+    todayOptions :: Parser SubCommand
+    todayOptions =
+      Today <$>
+      textArgument (help "The context to generate the today message for")
 
 main :: IO ()
 main = do
@@ -168,3 +188,4 @@ main = do
       updateTaskStatus Tasks.Done id currentTime (taskFilePath opts)
     CancelTask id ->
       updateTaskStatus Tasks.Cancelled id currentTime (taskFilePath opts)
+    Today context -> showToday context (taskFilePath opts)

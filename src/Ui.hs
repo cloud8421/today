@@ -2,9 +2,11 @@
 
 module Ui
   ( render
+  , showToday
   , displayError
   ) where
 
+import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import System.Console.ANSI
@@ -30,10 +32,10 @@ formatSeconds seconds = T.pack (humanDuration seconds)
         printf "%dh" (fromEnum (div s secondsInOneHour))
       | s >= secondsInOneDay = printf "%dd" (fromEnum (div s secondsInOneDay))
 
-formatContext :: T.Text -> T.Text
+formatContext :: Context -> T.Text
 formatContext = T.cons '@'
 
-displayGroupHeader :: T.Text -> Tasks -> IO ()
+displayGroupHeader :: Context -> Tasks -> IO ()
 displayGroupHeader context tasks = do
   setSGR [SetColor Foreground Vivid White]
   TIO.putStr (padLeft (formatContext context))
@@ -118,6 +120,19 @@ displayTaskGroups tasks currentTime = mapM_ displayGroup (toList taskGroups)
       displayGroupHeader context groupTasks
       displayTasks groupTasks currentTime
       spacer
+
+showToday :: Context -> Tasks -> IO ()
+showToday c tasks = do
+  spacer
+  TIO.putStrLn "*Today:*"
+  mapM_ taskLine contextTasks
+  spacer
+  where
+    taskLine (id, task) = do
+      TIO.putStr "• "
+      TIO.putStrLn (text task)
+    taskForToday (id, task) = context task == c && started task
+    contextTasks = L.filter taskForToday (toList tasks)
 
 render :: Tasks -> Elapsed -> IO ()
 render tasks currentTime = do

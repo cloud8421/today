@@ -12,6 +12,8 @@ module Tasks
   , removeTask
   , updateTaskStatus
   , age
+  , started
+  , Context
   , Task(..)
   , Status(..)
   , Tasks
@@ -33,12 +35,14 @@ data Status
   | Cancelled
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
+type Context = Text
+
 data Task =
   Task
     { status :: Status
     , text :: Text
     , lastUpdate :: Elapsed
-    , context :: Text
+    , context :: Context
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
@@ -50,7 +54,7 @@ newTaskId tasks =
     [] -> 1
     keys -> Prelude.maximum keys + 1
 
-addTask :: Tasks -> Text -> Elapsed -> Text -> Tasks
+addTask :: Tasks -> Text -> Elapsed -> Context -> Tasks
 addTask tasks text currentTime context =
   let taskId = newTaskId tasks
       task = Task Pending text currentTime context
@@ -73,6 +77,9 @@ updateTaskStatus newStatus tasks taskId currentTime =
 age :: Task -> Elapsed -> Seconds
 age task currentTime = timeDiff currentTime (lastUpdate task)
 
+started :: Task -> Bool
+started task = status task `elem` [Pending, Progress]
+
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
   Map.fromList
@@ -92,7 +99,7 @@ countByStatus s tasks =
           else count
    in Map.foldl' operator 0 tasks
 
-groupByContext :: Tasks -> Map.HashMap Text Tasks
+groupByContext :: Tasks -> Map.HashMap Context Tasks
 groupByContext = Map.foldlWithKey' mergeContexts Map.empty
   where
     mergeContexts contexts taskId task =
