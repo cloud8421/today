@@ -25,6 +25,8 @@ dependencies:
 - bytestring
 - directory
 - extra
+- hourglass
+- hourglass-orphans
 - optparse-applicative
 - text
 - time

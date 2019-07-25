@@ -10,6 +10,7 @@ module Tasks
   , addTask
   , removeTask
   , checkTask
+  , age
   , Task(..)
   , Status(..)
   , Tasks
@@ -17,9 +18,11 @@ module Tasks
 
 import Data.Aeson
 import qualified Data.HashMap.Strict as Map
+import Data.Hourglass (timeDiff)
+import Data.Hourglass.Types.Orphans
 import Data.Text
-import Data.Time.Clock (UTCTime)
 import GHC.Generics
+import Time.Types (Elapsed, Seconds)
 
 data Status
   = Pending
@@ -32,7 +35,7 @@ data Task =
   Task
     { status :: Status
     , text :: Text
-    , lastUpdate :: UTCTime
+    , lastUpdate :: Elapsed
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
@@ -44,7 +47,7 @@ newTaskId tasks =
     [] -> 1
     keys -> Prelude.maximum keys + 1
 
-addTask :: Tasks -> Text -> UTCTime -> Tasks
+addTask :: Tasks -> Text -> Elapsed -> Tasks
 addTask tasks text currentTime =
   let taskId = newTaskId tasks
       task = Task Pending text currentTime
@@ -53,7 +56,7 @@ addTask tasks text currentTime =
 removeTask :: Tasks -> Int -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
 
-checkTask :: Tasks -> Int -> UTCTime -> Either String Tasks
+checkTask :: Tasks -> Int -> Elapsed -> Either String Tasks
 checkTask tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
@@ -64,7 +67,10 @@ checkTask tasks taskId currentTime =
            taskId
            tasks)
 
-defaultTasks :: UTCTime -> Tasks
+age :: Task -> Elapsed -> Seconds
+age task currentTime = timeDiff currentTime (lastUpdate task)
+
+defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
   Map.fromList
     [ (1, Task Done "Install t" currentTime)

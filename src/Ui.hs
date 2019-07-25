@@ -5,58 +5,74 @@ module Ui
   , displayError
   ) where
 
-import Data.Text
-import qualified Data.Text.IO as T
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import System.Console.ANSI
 import Tasks
 import Text.Printf
+import Time.Types (Elapsed, Seconds)
 
 spacer :: IO ()
-spacer = T.putStrLn ""
+spacer = TIO.putStrLn ""
 
-padLeft :: Text -> Text
-padLeft = append "  "
+padLeft :: T.Text -> T.Text
+padLeft = T.append "  "
+
+formatSeconds :: Seconds -> T.Text
+formatSeconds seconds = T.pack (humanDuration seconds)
+  where
+    secondsInOneHour = 60 * 60
+    secondsInOneDay = secondsInOneHour * 24
+    humanDuration s
+      | s < 60 = show s
+      | s >= 60 && s < secondsInOneHour = printf "%dm" (fromEnum (div s 60))
+      | s >= secondsInOneHour && s < secondsInOneDay =
+        printf "%dh" (fromEnum (div s secondsInOneHour))
+      | s >= secondsInOneDay = printf "%dd" (fromEnum (div s secondsInOneDay))
 
 displayInboxHeader :: Tasks -> IO ()
 displayInboxHeader tasks = do
   setSGR [SetColor Foreground Vivid White]
-  T.putStr (padLeft "Inbox ")
+  TIO.putStr (padLeft "Inbox ")
   setSGR [SetColor Foreground Vivid Black]
   putStrLn inboxCount
   setSGR [Reset]
   where
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
-displayInboxTasks :: Tasks -> IO ()
-displayInboxTasks tasks = mapM_ displayTask (toList tasks)
+displayInboxTasks :: Tasks -> Elapsed -> IO ()
+displayInboxTasks tasks currentTime = mapM_ displayTask (toList tasks)
   where
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
-      T.putStr (padLeft (padLeft (pack (printf "%d." id))))
-      T.putStr " "
+      TIO.putStr (padLeft (padLeft (T.pack (printf "%d." id))))
+      TIO.putStr " "
       displayStatus (status task)
-      T.putStr "  "
+      TIO.putStr "  "
       setSGR [SetColor Foreground Vivid White]
-      T.putStrLn (text task)
+      TIO.putStr (text task)
+      TIO.putStr " "
+      setSGR [SetColor Foreground Vivid Black]
+      TIO.putStrLn (formatSeconds (age task currentTime))
 
 displayStats :: Tasks -> IO ()
 displayStats tasks = do
   setSGR [SetColor Foreground Vivid Green]
-  T.putStr (padLeft (pack (printf "%d " (countByStatus Done tasks))))
+  TIO.putStr (padLeft (T.pack (printf "%d " (countByStatus Done tasks))))
   setSGR [SetColor Foreground Vivid Black]
-  T.putStr "done · "
+  TIO.putStr "done · "
   setSGR [SetColor Foreground Vivid White]
-  T.putStr (pack (printf "%d " (countByStatus Progress tasks)))
+  TIO.putStr (T.pack (printf "%d " (countByStatus Progress tasks)))
   setSGR [SetColor Foreground Vivid Black]
-  T.putStr "in progress · "
+  TIO.putStr "in progress · "
   setSGR [SetColor Foreground Vivid Magenta]
-  T.putStr (pack (printf "%d " (countByStatus Pending tasks)))
+  TIO.putStr (T.pack (printf "%d " (countByStatus Pending tasks)))
   setSGR [SetColor Foreground Vivid Black]
-  T.putStr "pending · "
+  TIO.putStr "pending · "
   setSGR [SetColor Foreground Vivid Red]
-  T.putStr (pack (printf "%d " (countByStatus Cancelled tasks)))
+  TIO.putStr (T.pack (printf "%d " (countByStatus Cancelled tasks)))
   setSGR [SetColor Foreground Vivid Black]
-  T.putStr "cancelled"
+  TIO.putStr "cancelled"
   spacer
 
 displayStatus :: Status -> IO ()
@@ -64,22 +80,22 @@ displayStatus status =
   case status of
     Done -> do
       setSGR [SetColor Foreground Vivid Green]
-      T.putStr "✔"
+      TIO.putStr "✔"
     Pending -> do
       setSGR [SetColor Foreground Vivid Magenta]
-      T.putStr "◻"
+      TIO.putStr "◻"
     Progress -> do
       setSGR [SetColor Foreground Vivid White]
-      T.putStr "…"
+      TIO.putStr "…"
     Cancelled -> do
       setSGR [SetColor Foreground Vivid Red]
-      T.putStr "✖"
+      TIO.putStr "✖"
 
-displayTasks :: Tasks -> IO ()
-displayTasks tasks = do
+displayTasks :: Tasks -> Elapsed -> IO ()
+displayTasks tasks currentTime = do
   spacer
   displayInboxHeader tasks
-  displayInboxTasks tasks
+  displayInboxTasks tasks currentTime
   spacer
   displayStats tasks
   spacer

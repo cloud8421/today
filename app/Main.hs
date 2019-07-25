@@ -12,10 +12,11 @@ import qualified Data.ByteString.Lazy as B
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Data.Text.Lazy.IO as I
-import Data.Time.Clock (UTCTime, getCurrentTime)
 import Options.Applicative
 import System.Directory
+import System.Hourglass (timeCurrent)
 import qualified Tasks
+import Time.Types (Elapsed)
 import qualified Ui
 
 data Opts =
@@ -43,34 +44,34 @@ ensureTaskFile path tasks =
 loadTasksFromFile :: FilePath -> IO (Either String Tasks.Tasks)
 loadTasksFromFile path = eitherDecode <$> B.readFile path
 
-listTasks :: FilePath -> IO ()
-listTasks taskFilePath = do
+listTasks :: Elapsed -> FilePath -> IO ()
+listTasks currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
-    Right tasks -> Ui.displayTasks tasks
+    Right tasks -> Ui.displayTasks tasks currentTime
 
-addTask :: Text -> UTCTime -> FilePath -> IO ()
+addTask :: Text -> Elapsed -> FilePath -> IO ()
 addTask text currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
-      Ui.displayTasks newTasks
+      Ui.displayTasks newTasks currentTime
       where newTasks = Tasks.addTask tasks text currentTime
 
-deleteTask :: Int -> FilePath -> IO ()
-deleteTask taskId taskFilePath = do
+deleteTask :: Int -> Elapsed -> FilePath -> IO ()
+deleteTask taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
-      Ui.displayTasks newTasks
+      Ui.displayTasks newTasks currentTime
       where newTasks = Tasks.removeTask tasks taskId
 
-checkTask :: Int -> UTCTime -> FilePath -> IO ()
+checkTask :: Int -> Elapsed -> FilePath -> IO ()
 checkTask taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
@@ -80,7 +81,7 @@ checkTask taskId currentTime taskFilePath = do
         Left err -> Ui.displayError err
         Right newTasks -> do
           createTaskFile taskFilePath newTasks
-          Ui.displayTasks newTasks
+          Ui.displayTasks newTasks currentTime
 
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
@@ -133,11 +134,11 @@ optsParser = info (helper <*> programOptions) description
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
-  currentTime <- liftIO getCurrentTime
+  currentTime <- liftIO timeCurrent
   ensureTaskFile (taskFilePath opts) (Tasks.defaultTasks currentTime)
   case subCommand opts of
     AddTask textFrags -> addTask text currentTime (taskFilePath opts)
       where text = T.intercalate " " textFrags
-    ListTasks -> listTasks (taskFilePath opts)
-    DeleteTask id -> deleteTask id (taskFilePath opts)
+    ListTasks -> listTasks currentTime (taskFilePath opts)
+    DeleteTask id -> deleteTask id currentTime (taskFilePath opts)
     CheckTask id -> checkTask id currentTime (taskFilePath opts)
