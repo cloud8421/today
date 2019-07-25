@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ui
-  ( displayTasks
+  ( render
   , displayError
   ) where
 
@@ -30,18 +30,22 @@ formatSeconds seconds = T.pack (humanDuration seconds)
         printf "%dh" (fromEnum (div s secondsInOneHour))
       | s >= secondsInOneDay = printf "%dd" (fromEnum (div s secondsInOneDay))
 
-displayInboxHeader :: Tasks -> IO ()
-displayInboxHeader tasks = do
+formatContext :: T.Text -> T.Text
+formatContext = T.cons '@'
+
+displayGroupHeader :: T.Text -> Tasks -> IO ()
+displayGroupHeader context tasks = do
   setSGR [SetColor Foreground Vivid White]
-  TIO.putStr (padLeft "Inbox ")
+  TIO.putStr (padLeft (formatContext context))
+  TIO.putStr " "
   setSGR [SetColor Foreground Vivid Black]
   putStrLn inboxCount
   setSGR [Reset]
   where
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
-displayInboxTasks :: Tasks -> Elapsed -> IO ()
-displayInboxTasks tasks currentTime = mapM_ displayTask (toList tasks)
+displayTasks :: Tasks -> Elapsed -> IO ()
+displayTasks tasks currentTime = mapM_ displayTask (toList tasks)
   where
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
@@ -91,12 +95,19 @@ displayStatus status =
       setSGR [SetColor Foreground Vivid Red]
       TIO.putStr "✖"
 
-displayTasks :: Tasks -> Elapsed -> IO ()
-displayTasks tasks currentTime = do
+displayTaskGroups :: Tasks -> Elapsed -> IO ()
+displayTaskGroups tasks currentTime = mapM_ displayGroup (toList taskGroups)
+  where
+    taskGroups = groupByContext tasks
+    displayGroup (context, groupTasks) = do
+      displayGroupHeader context groupTasks
+      displayTasks groupTasks currentTime
+      spacer
+
+render :: Tasks -> Elapsed -> IO ()
+render tasks currentTime = do
   spacer
-  displayInboxHeader tasks
-  displayInboxTasks tasks currentTime
-  spacer
+  displayTaskGroups tasks currentTime
   displayStats tasks
   spacer
 

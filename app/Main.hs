@@ -26,13 +26,16 @@ data Opts =
     }
 
 data SubCommand
-  = AddTask [Text]
+  = AddTask Text [Text]
   | ListTasks
   | DeleteTask Int
   | CheckTask Int
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
+
+defaultTaskContext :: String
+defaultTaskContext = "inbox"
 
 createTaskFile :: FilePath -> Tasks.Tasks -> IO ()
 createTaskFile path tasks = I.writeFile path (encodeToLazyText tasks)
@@ -49,17 +52,17 @@ listTasks currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
-    Right tasks -> Ui.displayTasks tasks currentTime
+    Right tasks -> Ui.render tasks currentTime
 
-addTask :: Text -> Elapsed -> FilePath -> IO ()
-addTask text currentTime taskFilePath = do
+addTask :: Text -> Elapsed -> FilePath -> Text -> IO ()
+addTask text currentTime taskFilePath taskContext = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
-      Ui.displayTasks newTasks currentTime
-      where newTasks = Tasks.addTask tasks text currentTime
+      Ui.render newTasks currentTime
+      where newTasks = Tasks.addTask tasks text currentTime taskContext
 
 deleteTask :: Int -> Elapsed -> FilePath -> IO ()
 deleteTask taskId currentTime taskFilePath = do
@@ -68,7 +71,7 @@ deleteTask taskId currentTime taskFilePath = do
     Left err -> Ui.displayError err
     Right tasks -> do
       createTaskFile taskFilePath newTasks
-      Ui.displayTasks newTasks currentTime
+      Ui.render newTasks currentTime
       where newTasks = Tasks.removeTask tasks taskId
 
 checkTask :: Int -> Elapsed -> FilePath -> IO ()
@@ -81,10 +84,13 @@ checkTask taskId currentTime taskFilePath = do
         Left err -> Ui.displayError err
         Right newTasks -> do
           createTaskFile taskFilePath newTasks
-          Ui.displayTasks newTasks currentTime
+          Ui.render newTasks currentTime
 
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
+
+textOption :: Mod OptionFields String -> Parser Text
+textOption = fmap pack . strOption
 
 taskFilePathOption :: Parser FilePath
 taskFilePathOption =
@@ -93,6 +99,12 @@ taskFilePathOption =
      value defaultTaskFilePath <>
      showDefault <>
      help "Which taskfile to use")
+
+taskContextOption :: Parser Text
+taskContextOption =
+  textOption
+    (long "context" <> short 'c' <> value defaultTaskContext <>
+     help "The content for the task, e.g. work or home")
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -116,7 +128,9 @@ optsParser = info (helper <*> programOptions) description
       command "add" (info addOptions (progDesc "add a new task")) <>
       command "a" (info addOptions (progDesc "add a new task"))
     addOptions :: Parser SubCommand
-    addOptions = AddTask <$> many (textArgument (help "Text of the new task"))
+    addOptions =
+      AddTask <$> taskContextOption <*>
+      many (textArgument (help "Text of the new task"))
     deleteTaskCommand :: Mod CommandFields SubCommand
     deleteTaskCommand =
       command "delete" (info deleteOptions (progDesc "Delete an existing task")) <>
@@ -137,7 +151,8 @@ main = do
   currentTime <- liftIO timeCurrent
   ensureTaskFile (taskFilePath opts) (Tasks.defaultTasks currentTime)
   case subCommand opts of
-    AddTask textFrags -> addTask text currentTime (taskFilePath opts)
+    AddTask taskContext textFrags ->
+      addTask text currentTime (taskFilePath opts) taskContext
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks currentTime (taskFilePath opts)
     DeleteTask id -> deleteTask id currentTime (taskFilePath opts)
