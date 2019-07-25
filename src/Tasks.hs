@@ -10,7 +10,7 @@ module Tasks
   , toList
   , addTask
   , removeTask
-  , checkTask
+  , updateTaskStatus
   , age
   , Task(..)
   , Status(..)
@@ -59,14 +59,14 @@ addTask tasks text currentTime context =
 removeTask :: Tasks -> Int -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
 
-checkTask :: Tasks -> Int -> Elapsed -> Either String Tasks
-checkTask tasks taskId currentTime =
+updateTaskStatus :: Status -> Tasks -> Int -> Elapsed -> Either String Tasks
+updateTaskStatus newStatus tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
     Just task ->
       Right
         (Map.adjust
-           (\t -> t {status = Done, lastUpdate = currentTime})
+           (\t -> t {status = newStatus, lastUpdate = currentTime})
            taskId
            tasks)
 

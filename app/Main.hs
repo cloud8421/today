@@ -30,6 +30,7 @@ data SubCommand
   | ListTasks
   | DeleteTask Int
   | CheckTask Int
+  | CancelTask Int
 
 defaultTaskFilePath :: FilePath
 defaultTaskFilePath = "./tasks.json"
@@ -74,13 +75,13 @@ deleteTask taskId currentTime taskFilePath = do
       Ui.render newTasks currentTime
       where newTasks = Tasks.removeTask tasks taskId
 
-checkTask :: Int -> Elapsed -> FilePath -> IO ()
-checkTask taskId currentTime taskFilePath = do
+updateTaskStatus :: Tasks.Status -> Int -> Elapsed -> FilePath -> IO ()
+updateTaskStatus newStatus taskId currentTime taskFilePath = do
   result <- loadTasksFromFile taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks ->
-      case Tasks.checkTask tasks taskId currentTime of
+      case Tasks.updateTaskStatus newStatus tasks taskId currentTime of
         Left err -> Ui.displayError err
         Right newTasks -> do
           createTaskFile taskFilePath newTasks
@@ -118,7 +119,8 @@ optsParser = info (helper <*> programOptions) description
       Opts <$> taskFilePathOption <*>
       hsubparser
         (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
-         checkTaskCommand)
+         checkTaskCommand <>
+         cancelTaskCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
@@ -144,6 +146,12 @@ optsParser = info (helper <*> programOptions) description
       command "c" (info checkOptions (progDesc "Check an existing task"))
     checkOptions :: Parser SubCommand
     checkOptions = CheckTask <$> argument auto (help "ID of the task to check")
+    cancelTaskCommand :: Mod CommandFields SubCommand
+    cancelTaskCommand =
+      command "cancel" (info cancelOptions (progDesc "Cancel an existing task"))
+    cancelOptions :: Parser SubCommand
+    cancelOptions =
+      CancelTask <$> argument auto (help "ID of the task to cancel")
 
 main :: IO ()
 main = do
@@ -156,4 +164,7 @@ main = do
       where text = T.intercalate " " textFrags
     ListTasks -> listTasks currentTime (taskFilePath opts)
     DeleteTask id -> deleteTask id currentTime (taskFilePath opts)
-    CheckTask id -> checkTask id currentTime (taskFilePath opts)
+    CheckTask id ->
+      updateTaskStatus Tasks.Done id currentTime (taskFilePath opts)
+    CancelTask id ->
+      updateTaskStatus Tasks.Cancelled id currentTime (taskFilePath opts)
