@@ -3,7 +3,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
 module Tasks
-  ( defaultTasks
+  ( emptyTasks
+  , newTaskId
+  , defaultTasks
   , totalCount
   , countByStatus
   , groupByContext
@@ -52,6 +54,9 @@ data Task =
 type TaskId = Int
 
 type Tasks = Map.HashMap TaskId Task
+
+emptyTasks :: Tasks
+emptyTasks = Map.empty
 
 newTaskId :: Tasks -> TaskId
 newTaskId tasks =
