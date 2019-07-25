@@ -11,6 +11,7 @@ module Tasks
   , addTask
   , removeTask
   , updateTaskStatus
+  , updateTaskText
   , age
   , started
   , Context
@@ -25,6 +26,7 @@ import qualified Data.HashMap.Strict as Map
 import Data.Hourglass (timeDiff)
 import Data.Hourglass.Types.Orphans
 import qualified Data.List as L
+import Data.Maybe
 import Data.Text
 import GHC.Generics
 import Time.Types (Elapsed, Seconds)
@@ -74,6 +76,17 @@ updateTaskStatus newStatus tasks taskId currentTime =
       Right
         (Map.adjust
            (\t -> t {status = newStatus, lastUpdate = currentTime})
+           taskId
+           tasks)
+
+updateTaskText :: Text -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateTaskText newText tasks taskId currentTime =
+  case Map.lookup taskId tasks of
+    Nothing -> Left "Task not found"
+    Just task ->
+      Right
+        (Map.adjust
+           (\t -> t {text = newText, lastUpdate = currentTime})
            taskId
            tasks)
 

@@ -31,6 +31,7 @@ data SubCommand
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
+  | UpdateTaskText Tasks.TaskId [Text]
   | Today Text
 
 defaultTaskFilePath :: FilePath
@@ -95,6 +96,18 @@ showToday context taskFilePath = do
     Left err -> Ui.displayError err
     Right tasks -> Ui.showToday context tasks
 
+updateTaskText :: Text -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
+updateTaskText text id currentTime taskFilePath = do
+  result <- loadTasksFromFile taskFilePath
+  case result of
+    Left err -> Ui.displayError err
+    Right tasks ->
+      case Tasks.updateTaskText text tasks id currentTime of
+        Left err -> Ui.displayError err
+        Right newTasks -> do
+          createTaskFile taskFilePath newTasks
+          Ui.render newTasks currentTime
+
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
 
@@ -129,6 +142,7 @@ optsParser = info (helper <*> programOptions) description
         (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
          checkTaskCommand <>
          cancelTaskCommand <>
+         updateTaskTextCommand <>
          todayCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
@@ -161,6 +175,18 @@ optsParser = info (helper <*> programOptions) description
     cancelOptions :: Parser SubCommand
     cancelOptions =
       CancelTask <$> argument auto (help "ID of the task to cancel")
+    updateTaskTextCommand :: Mod CommandFields SubCommand
+    updateTaskTextCommand =
+      command
+        "update_text"
+        (info updateTextOptions (progDesc "updates an existing task text")) <>
+      command
+        "ut"
+        (info updateTextOptions (progDesc "updates an existing task text"))
+    updateTextOptions :: Parser SubCommand
+    updateTextOptions =
+      UpdateTaskText <$> argument auto (help "ID of the task to update") <*>
+      many (textArgument (help "Text of the task"))
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
       command
@@ -188,4 +214,7 @@ main = do
       updateTaskStatus Tasks.Done id currentTime (taskFilePath opts)
     CancelTask id ->
       updateTaskStatus Tasks.Cancelled id currentTime (taskFilePath opts)
+    UpdateTaskText id textFrags ->
+      updateTaskText text id currentTime (taskFilePath opts)
+      where text = T.intercalate " " textFrags
     Today context -> showToday context (taskFilePath opts)
