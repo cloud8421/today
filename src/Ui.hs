@@ -53,8 +53,7 @@ displayTasks tasks currentTime = mapM_ displayTask (toList tasks)
       TIO.putStr " "
       displayStatus (status task)
       TIO.putStr "  "
-      setSGR [SetColor Foreground Vivid White]
-      TIO.putStr (text task)
+      displayText (status task) (text task)
       TIO.putStr " "
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStrLn (formatSeconds (age task currentTime))
@@ -94,6 +93,22 @@ displayStatus status =
     Cancelled -> do
       setSGR [SetColor Foreground Vivid Red]
       TIO.putStr "✖"
+
+displayText :: Status -> T.Text -> IO ()
+displayText status text =
+  case status of
+    Done -> do
+      setSGR [SetColor Foreground Vivid Black]
+      TIO.putStr text
+    Pending -> do
+      setSGR [SetColor Foreground Vivid White]
+      TIO.putStr text
+    Progress -> do
+      setSGR [SetColor Foreground Vivid White]
+      TIO.putStr text
+    Cancelled -> do
+      setSGR [SetColor Foreground Vivid Black]
+      TIO.putStr text
 
 displayTaskGroups :: Tasks -> Elapsed -> IO ()
 displayTaskGroups tasks currentTime = mapM_ displayGroup (toList taskGroups)
