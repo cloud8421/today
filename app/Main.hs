@@ -71,27 +71,22 @@ optsParser = info (helper <*> programOptions) description
          todayCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
-      command "list" (info (pure ListTasks) (progDesc "List current tasks")) <>
-      command "ls" (info (pure ListTasks) (progDesc "List current tasks"))
+      command "list" (info (pure ListTasks) (progDesc "List current tasks"))
     addTaskCommand :: Mod CommandFields SubCommand
-    addTaskCommand =
-      command "add" (info addOptions (progDesc "add a new task")) <>
-      command "a" (info addOptions (progDesc "add a new task"))
+    addTaskCommand = command "add" (info addOptions (progDesc "add a new task"))
     addOptions :: Parser SubCommand
     addOptions =
       AddTask <$> taskContextOption <*>
       many (textArgument (help "Text of the new task"))
     deleteTaskCommand :: Mod CommandFields SubCommand
     deleteTaskCommand =
-      command "delete" (info deleteOptions (progDesc "Delete an existing task")) <>
-      command "d" (info deleteOptions (progDesc "Delete an existing task"))
+      command "delete" (info deleteOptions (progDesc "Delete an existing task"))
     deleteOptions :: Parser SubCommand
     deleteOptions =
       DeleteTask <$> argument auto (help "ID of the task to delete")
     checkTaskCommand :: Mod CommandFields SubCommand
     checkTaskCommand =
-      command "check" (info checkOptions (progDesc "Check an existing task")) <>
-      command "c" (info checkOptions (progDesc "Check an existing task"))
+      command "check" (info checkOptions (progDesc "Check an existing task"))
     checkOptions :: Parser SubCommand
     checkOptions = CheckTask <$> argument auto (help "ID of the task to check")
     cancelTaskCommand :: Mod CommandFields SubCommand
@@ -104,9 +99,6 @@ optsParser = info (helper <*> programOptions) description
     updateTaskTextCommand =
       command
         "update_text"
-        (info updateTextOptions (progDesc "updates an existing task text")) <>
-      command
-        "ut"
         (info updateTextOptions (progDesc "updates an existing task text"))
     updateTextOptions :: Parser SubCommand
     updateTextOptions =
