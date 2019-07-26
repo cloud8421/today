@@ -144,12 +144,24 @@ showToday c tasks = do
     taskForToday (id, task) = context task == c && started task
     contextTasks = L.filter taskForToday (toList tasks)
 
+displayEmpty :: IO ()
+displayEmpty = do
+  TIO.putStrLn (padLeft "No tasks in your list. Enjoy some free time!")
+  spacer
+  TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
+
 render :: Tasks -> Elapsed -> IO ()
 render tasks currentTime = do
   spacer
-  displayTaskGroups tasks currentTime
-  displayStats tasks
+  body
   spacer
+  where
+    body =
+      case totalCount tasks of
+        0 -> displayEmpty
+        other -> do
+          displayTaskGroups tasks currentTime
+          displayStats tasks
 
 displayError :: String -> IO ()
 displayError err = do
