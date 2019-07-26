@@ -27,6 +27,7 @@ data SubCommand
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
+  | StartTask Tasks.TaskId
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Today Text
@@ -68,6 +69,7 @@ optsParser = info (helper <*> programOptions) description
         (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
          checkTaskCommand <>
          cancelTaskCommand <>
+         startTaskCommand <>
          updateTaskTextCommand <>
          moveTaskCommand <>
          todayCommand)
@@ -97,6 +99,11 @@ optsParser = info (helper <*> programOptions) description
     cancelOptions :: Parser SubCommand
     cancelOptions =
       CancelTask <$> argument auto (help "ID of the task to cancel")
+    startTaskCommand :: Mod CommandFields SubCommand
+    startTaskCommand =
+      command "start" (info startOptions (progDesc "Start an existing task"))
+    startOptions :: Parser SubCommand
+    startOptions = StartTask <$> argument auto (help "ID of the task to start")
     updateTaskTextCommand :: Mod CommandFields SubCommand
     updateTaskTextCommand =
       command
@@ -139,6 +146,8 @@ update sc currentTime tasks =
       Tasks.updateTaskStatus Tasks.Done tasks taskId currentTime
     CancelTask taskId ->
       Tasks.updateTaskStatus Tasks.Cancelled tasks taskId currentTime
+    StartTask taskId ->
+      Tasks.updateTaskStatus Tasks.Progress tasks taskId currentTime
     Update taskId textFrags ->
       Tasks.updateTaskText text tasks taskId currentTime
       where text = T.intercalate " " textFrags
