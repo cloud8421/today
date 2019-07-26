@@ -85,7 +85,10 @@ displayStats tasks = do
   where
     doneCount = countByStatus Done tasks
     percentDone :: Float
-    percentDone = 100 * fromIntegral doneCount / fromIntegral (totalCount tasks)
+    percentDone =
+      case totalCount tasks of
+        0 -> 0
+        otherCount -> 100 * fromIntegral doneCount / fromIntegral otherCount
 
 displayStatus :: Status -> IO ()
 displayStatus status =
