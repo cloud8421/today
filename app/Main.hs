@@ -4,7 +4,7 @@
 module Main where
 
 import Control.Monad (join)
-import Control.Monad.Extra (ifM)
+import Control.Monad.Extra (fromMaybeM, ifM)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (eitherDecode)
 import Data.Aeson.Text (encodeToLazyText)
@@ -14,6 +14,7 @@ import Data.Text as T
 import qualified Data.Text.Lazy.IO as I
 import Options.Applicative
 import System.Directory
+import System.Environment (lookupEnv)
 import System.Hourglass (timeCurrent)
 import qualified Tasks
 import Time.Types (Elapsed)
@@ -199,22 +200,27 @@ optsParser = info (helper <*> programOptions) description
       Today <$>
       textArgument (help "The context to generate the today message for")
 
+resolveTaskFilePath :: Opts -> IO FilePath
+resolveTaskFilePath opts =
+  fromMaybeM (return (taskFilePath opts)) (lookupEnv "TASKFILE")
+
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
   currentTime <- liftIO timeCurrent
-  ensureTaskFile (taskFilePath opts) (Tasks.defaultTasks currentTime)
+  resolvedTaskFilePath <- liftIO $ resolveTaskFilePath opts
+  ensureTaskFile resolvedTaskFilePath (Tasks.defaultTasks currentTime)
   case subCommand opts of
     AddTask taskContext textFrags ->
-      addTask text currentTime (taskFilePath opts) taskContext
+      addTask text currentTime resolvedTaskFilePath taskContext
       where text = T.intercalate " " textFrags
-    ListTasks -> listTasks currentTime (taskFilePath opts)
-    DeleteTask id -> deleteTask id currentTime (taskFilePath opts)
+    ListTasks -> listTasks currentTime resolvedTaskFilePath
+    DeleteTask id -> deleteTask id currentTime resolvedTaskFilePath
     CheckTask id ->
-      updateTaskStatus Tasks.Done id currentTime (taskFilePath opts)
+      updateTaskStatus Tasks.Done id currentTime resolvedTaskFilePath
     CancelTask id ->
-      updateTaskStatus Tasks.Cancelled id currentTime (taskFilePath opts)
+      updateTaskStatus Tasks.Cancelled id currentTime resolvedTaskFilePath
     UpdateTaskText id textFrags ->
-      updateTaskText text id currentTime (taskFilePath opts)
+      updateTaskText text id currentTime resolvedTaskFilePath
       where text = T.intercalate " " textFrags
-    Today context -> showToday context (taskFilePath opts)
+    Today context -> showToday context resolvedTaskFilePath
