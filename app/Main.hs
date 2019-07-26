@@ -27,7 +27,7 @@ data SubCommand
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
-  | UpdateTaskText Tasks.TaskId [Text]
+  | Update Tasks.TaskId [Text]
   | Today Text
 
 defaultTaskContext :: String
@@ -98,11 +98,11 @@ optsParser = info (helper <*> programOptions) description
     updateTaskTextCommand :: Mod CommandFields SubCommand
     updateTaskTextCommand =
       command
-        "update_text"
+        "update"
         (info updateTextOptions (progDesc "updates an existing task text"))
     updateTextOptions :: Parser SubCommand
     updateTextOptions =
-      UpdateTaskText <$> argument auto (help "ID of the task to update") <*>
+      Update <$> argument auto (help "ID of the task to update") <*>
       many (textArgument (help "Text of the task"))
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
@@ -128,7 +128,7 @@ update sc currentTime tasks =
       Tasks.updateTaskStatus Tasks.Done tasks taskId currentTime
     CancelTask taskId ->
       Tasks.updateTaskStatus Tasks.Cancelled tasks taskId currentTime
-    UpdateTaskText taskId textFrags ->
+    Update taskId textFrags ->
       Tasks.updateTaskText text tasks taskId currentTime
       where text = T.intercalate " " textFrags
     Today context -> Right tasks
