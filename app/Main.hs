@@ -4,18 +4,12 @@
 module Main where
 
 import Control.Monad (join)
-import Control.Monad.Extra (fromMaybeM, ifM)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (eitherDecode)
-import Data.Aeson.Text (encodeToLazyText)
-import qualified Data.ByteString.Lazy as B
 import Data.Semigroup ((<>))
 import Data.Text as T
-import qualified Data.Text.Lazy.IO as I
 import Options.Applicative
-import System.Directory
-import System.Environment (lookupEnv)
 import System.Hourglass (timeCurrent)
+import qualified Taskfile
 import qualified Tasks
 import Time.Types (Elapsed)
 import qualified Ui
@@ -35,78 +29,65 @@ data SubCommand
   | UpdateTaskText Tasks.TaskId [Text]
   | Today Text
 
-defaultTaskFilePath :: FilePath
-defaultTaskFilePath = "./tasks.json"
-
 defaultTaskContext :: String
 defaultTaskContext = "inbox"
 
-createTaskFile :: FilePath -> Tasks.Tasks -> IO ()
-createTaskFile path tasks = I.writeFile path (encodeToLazyText tasks)
-
-ensureTaskFile :: FilePath -> Tasks.Tasks -> IO ()
-ensureTaskFile path tasks =
-  ifM (doesFileExist path) (return ()) (createTaskFile path tasks)
-
-loadTasksFromFile :: FilePath -> IO (Either String Tasks.Tasks)
-loadTasksFromFile path = eitherDecode <$> B.readFile path
-
 listTasks :: Elapsed -> FilePath -> IO ()
 listTasks currentTime taskFilePath = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> Ui.render tasks currentTime
 
 addTask :: Text -> Elapsed -> FilePath -> Tasks.Context -> IO ()
 addTask text currentTime taskFilePath taskContext = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
-      createTaskFile taskFilePath newTasks
+      Taskfile.create taskFilePath newTasks
       Ui.render newTasks currentTime
       where newTasks = Tasks.addTask tasks text currentTime taskContext
 
 deleteTask :: Tasks.TaskId -> Elapsed -> FilePath -> IO ()
 deleteTask taskId currentTime taskFilePath = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> do
-      createTaskFile taskFilePath newTasks
+      Taskfile.create taskFilePath newTasks
       Ui.render newTasks currentTime
       where newTasks = Tasks.removeTask tasks taskId
 
 updateTaskStatus :: Tasks.Status -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
 updateTaskStatus newStatus taskId currentTime taskFilePath = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks ->
       case Tasks.updateTaskStatus newStatus tasks taskId currentTime of
         Left err -> Ui.displayError err
         Right newTasks -> do
-          createTaskFile taskFilePath newTasks
+          Taskfile.create taskFilePath newTasks
           Ui.render newTasks currentTime
 
 showToday :: Tasks.Context -> FilePath -> IO ()
 showToday context taskFilePath = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks -> Ui.showToday context tasks
 
 updateTaskText :: Text -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
 updateTaskText text id currentTime taskFilePath = do
-  result <- loadTasksFromFile taskFilePath
+  result <- Taskfile.loadTasks taskFilePath
   case result of
     Left err -> Ui.displayError err
     Right tasks ->
       case Tasks.updateTaskText text tasks id currentTime of
         Left err -> Ui.displayError err
         Right newTasks -> do
-          createTaskFile taskFilePath newTasks
+          Taskfile.create taskFilePath newTasks
           Ui.render newTasks currentTime
 
 textArgument :: Mod ArgumentFields String -> Parser Text
@@ -119,7 +100,7 @@ taskFilePathOption :: Parser FilePath
 taskFilePathOption =
   strOption
     (long "taskfile" <> short 'f' <> metavar "TASKFILE" <>
-     value defaultTaskFilePath <>
+     value Taskfile.defaultPath <>
      showDefault <>
      help "Which taskfile to use")
 
@@ -200,16 +181,12 @@ optsParser = info (helper <*> programOptions) description
       Today <$>
       textArgument (help "The context to generate the today message for")
 
-resolveTaskFilePath :: Opts -> IO FilePath
-resolveTaskFilePath opts =
-  fromMaybeM (return (taskFilePath opts)) (lookupEnv "TASKFILE")
-
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
   currentTime <- liftIO timeCurrent
-  resolvedTaskFilePath <- liftIO $ resolveTaskFilePath opts
-  ensureTaskFile resolvedTaskFilePath (Tasks.defaultTasks currentTime)
+  resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
+  Taskfile.ensure resolvedTaskFilePath (Tasks.defaultTasks currentTime)
   case subCommand opts of
     AddTask taskContext textFrags ->
       addTask text currentTime resolvedTaskFilePath taskContext
