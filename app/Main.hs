@@ -28,6 +28,7 @@ data SubCommand
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
   | Update Tasks.TaskId [Text]
+  | Move Tasks.TaskId Tasks.Context
   | Today Text
 
 defaultTaskContext :: String
@@ -68,6 +69,7 @@ optsParser = info (helper <*> programOptions) description
          checkTaskCommand <>
          cancelTaskCommand <>
          updateTaskTextCommand <>
+         moveTaskCommand <>
          todayCommand)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
@@ -104,6 +106,15 @@ optsParser = info (helper <*> programOptions) description
     updateTextOptions =
       Update <$> argument auto (help "ID of the task to update") <*>
       many (textArgument (help "Text of the task"))
+    moveTaskCommand :: Mod CommandFields SubCommand
+    moveTaskCommand =
+      command
+        "move"
+        (info moveTaskOptions (progDesc "moves a task to a different context"))
+    moveTaskOptions :: Parser SubCommand
+    moveTaskOptions =
+      Move <$> argument auto (help "ID of the task to update") <*>
+      textArgument (help "Context of the task")
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
       command
@@ -131,6 +142,8 @@ update sc currentTime tasks =
     Update taskId textFrags ->
       Tasks.updateTaskText text tasks taskId currentTime
       where text = T.intercalate " " textFrags
+    Move taskId context ->
+      Tasks.updateTaskContext context tasks taskId currentTime
     Today context -> Right tasks
 
 view :: SubCommand -> Elapsed -> Tasks.Tasks -> IO ()

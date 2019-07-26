@@ -12,6 +12,7 @@ module Tasks
   , toList
   , addTask
   , removeTask
+  , updateTaskContext
   , updateTaskStatus
   , updateTaskText
   , age
@@ -92,6 +93,18 @@ updateTaskText newText tasks taskId currentTime =
       Right
         (Map.adjust
            (\t -> t {text = newText, lastUpdate = currentTime})
+           taskId
+           tasks)
+
+updateTaskContext ::
+     Context -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateTaskContext newContext tasks taskId currentTime =
+  case Map.lookup taskId tasks of
+    Nothing -> Left "Task not found"
+    Just task ->
+      Right
+        (Map.adjust
+           (\t -> t {context = newContext, lastUpdate = currentTime})
            taskId
            tasks)
 
