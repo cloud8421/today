@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Main where
 
@@ -31,64 +32,6 @@ data SubCommand
 
 defaultTaskContext :: String
 defaultTaskContext = "inbox"
-
-listTasks :: Elapsed -> FilePath -> IO ()
-listTasks currentTime taskFilePath = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> Ui.render tasks currentTime
-
-addTask :: Text -> Elapsed -> FilePath -> Tasks.Context -> IO ()
-addTask text currentTime taskFilePath taskContext = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> do
-      Taskfile.create taskFilePath newTasks
-      Ui.render newTasks currentTime
-      where newTasks = Tasks.addTask tasks text currentTime taskContext
-
-deleteTask :: Tasks.TaskId -> Elapsed -> FilePath -> IO ()
-deleteTask taskId currentTime taskFilePath = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> do
-      Taskfile.create taskFilePath newTasks
-      Ui.render newTasks currentTime
-      where newTasks = Tasks.removeTask tasks taskId
-
-updateTaskStatus :: Tasks.Status -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
-updateTaskStatus newStatus taskId currentTime taskFilePath = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks ->
-      case Tasks.updateTaskStatus newStatus tasks taskId currentTime of
-        Left err -> Ui.displayError err
-        Right newTasks -> do
-          Taskfile.create taskFilePath newTasks
-          Ui.render newTasks currentTime
-
-showToday :: Tasks.Context -> FilePath -> IO ()
-showToday context taskFilePath = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks -> Ui.showToday context tasks
-
-updateTaskText :: Text -> Tasks.TaskId -> Elapsed -> FilePath -> IO ()
-updateTaskText text id currentTime taskFilePath = do
-  result <- Taskfile.loadTasks taskFilePath
-  case result of
-    Left err -> Ui.displayError err
-    Right tasks ->
-      case Tasks.updateTaskText text tasks id currentTime of
-        Left err -> Ui.displayError err
-        Right newTasks -> do
-          Taskfile.create taskFilePath newTasks
-          Ui.render newTasks currentTime
 
 textArgument :: Mod ArgumentFields String -> Parser Text
 textArgument = fmap pack . strArgument
@@ -181,23 +124,40 @@ optsParser = info (helper <*> programOptions) description
       Today <$>
       textArgument (help "The context to generate the today message for")
 
+update :: SubCommand -> Elapsed -> Tasks.Tasks -> Either String Tasks.Tasks
+update sc currentTime tasks =
+  case sc of
+    AddTask taskContext textFrags ->
+      Right (Tasks.addTask tasks text currentTime taskContext)
+      where text = T.intercalate " " textFrags
+    ListTasks -> Right tasks
+    DeleteTask taskId -> Right (Tasks.removeTask tasks taskId)
+    CheckTask taskId ->
+      Tasks.updateTaskStatus Tasks.Done tasks taskId currentTime
+    CancelTask taskId ->
+      Tasks.updateTaskStatus Tasks.Cancelled tasks taskId currentTime
+    UpdateTaskText taskId textFrags ->
+      Tasks.updateTaskText text tasks taskId currentTime
+      where text = T.intercalate " " textFrags
+    Today context -> Right tasks
+
+view :: SubCommand -> Elapsed -> Tasks.Tasks -> IO ()
+view sc currentTime tasks =
+  case sc of
+    Today context -> Ui.showToday context tasks
+    other -> Ui.render tasks currentTime
+
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
   currentTime <- liftIO timeCurrent
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure resolvedTaskFilePath (Tasks.defaultTasks currentTime)
-  case subCommand opts of
-    AddTask taskContext textFrags ->
-      addTask text currentTime resolvedTaskFilePath taskContext
-      where text = T.intercalate " " textFrags
-    ListTasks -> listTasks currentTime resolvedTaskFilePath
-    DeleteTask id -> deleteTask id currentTime resolvedTaskFilePath
-    CheckTask id ->
-      updateTaskStatus Tasks.Done id currentTime resolvedTaskFilePath
-    CancelTask id ->
-      updateTaskStatus Tasks.Cancelled id currentTime resolvedTaskFilePath
-    UpdateTaskText id textFrags ->
-      updateTaskText text id currentTime resolvedTaskFilePath
-      where text = T.intercalate " " textFrags
-    Today context -> showToday context resolvedTaskFilePath
+  Taskfile.loadTasks resolvedTaskFilePath >>= \case
+    Left err -> Ui.displayError err
+    Right tasks ->
+      case update (subCommand opts) currentTime tasks of
+        Right newTasks -> do
+          Taskfile.create resolvedTaskFilePath newTasks
+          view (subCommand opts) currentTime newTasks
+        Left err -> Ui.displayError err
