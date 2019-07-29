@@ -32,29 +32,6 @@ data SubCommand
   | Move Tasks.TaskId Tasks.Context
   | Today Text
 
-defaultTaskContext :: String
-defaultTaskContext = "inbox"
-
-textArgument :: Mod ArgumentFields String -> Parser Text
-textArgument = fmap pack . strArgument
-
-textOption :: Mod OptionFields String -> Parser Text
-textOption = fmap pack . strOption
-
-taskFilePathOption :: Parser FilePath
-taskFilePathOption =
-  strOption
-    (long "taskfile" <> short 'f' <> metavar "TASKFILE" <>
-     value Taskfile.defaultPath <>
-     showDefault <>
-     help "Which taskfile to use")
-
-taskContextOption :: Parser Text
-taskContextOption =
-  textOption
-    (long "context" <> short 'c' <> value defaultTaskContext <>
-     help "The content for the task, e.g. work or home")
-
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
   where
@@ -73,6 +50,22 @@ optsParser = info (helper <*> programOptions) description
          updateTaskTextCommand <>
          moveTaskCommand <>
          todayCommand)
+    textArgument :: Mod ArgumentFields String -> Parser Text
+    textArgument = fmap pack . strArgument
+    textOption :: Mod OptionFields String -> Parser Text
+    textOption = fmap pack . strOption
+    taskFilePathOption :: Parser FilePath
+    taskFilePathOption =
+      strOption
+        (long "taskfile" <> short 'f' <> metavar "TASKFILE" <>
+         value Taskfile.defaultPath <>
+         showDefault <>
+         help "Which taskfile to use")
+    taskContextOption :: Parser Text
+    taskContextOption =
+      textOption
+        (long "context" <> short 'c' <> value Tasks.defaultContext <>
+         help "The content for the task, e.g. work or home")
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks"))

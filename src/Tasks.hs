@@ -5,6 +5,7 @@
 module Tasks
   ( emptyTasks
   , newTaskId
+  , defaultContext
   , defaultTasks
   , totalCount
   , countByStatus
@@ -58,6 +59,9 @@ type Tasks = Map.HashMap TaskId Task
 
 emptyTasks :: Tasks
 emptyTasks = Map.empty
+
+defaultContext :: String
+defaultContext = "inbox"
 
 newTaskId :: Tasks -> TaskId
 newTaskId tasks =
