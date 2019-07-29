@@ -42,14 +42,18 @@ optsParser = info (helper <*> programOptions) description
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
-      hsubparser
-        (listTasksCommand <> addTaskCommand <> deleteTaskCommand <>
-         checkTaskCommand <>
-         cancelTaskCommand <>
-         startTaskCommand <>
-         updateTaskTextCommand <>
-         moveTaskCommand <>
-         todayCommand)
+      (hsubparser taskManagementCommands <|> hsubparser reporterCommands)
+    taskManagementCommands :: Mod CommandFields SubCommand
+    taskManagementCommands =
+      commandGroup "Task management:" <> listTasksCommand <> addTaskCommand <>
+      deleteTaskCommand <>
+      checkTaskCommand <>
+      cancelTaskCommand <>
+      startTaskCommand <>
+      updateTaskTextCommand <>
+      moveTaskCommand
+    reporterCommands :: Mod CommandFields SubCommand
+    reporterCommands = commandGroup "Reporters:" <> todayCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
     textArgument = fmap pack . strArgument
     textOption :: Mod OptionFields String -> Parser Text
