@@ -8,6 +8,7 @@ module Tasks
   , defaultContext
   , defaultTasks
   , totalCount
+  , clearCompleted
   , countByStatus
   , groupByContext
   , toList
@@ -77,6 +78,9 @@ addTask tasks text currentTime context =
 
 removeTask :: Tasks -> TaskId -> Tasks
 removeTask tasks taskId = Map.delete taskId tasks
+
+clearCompleted :: Tasks -> Tasks
+clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
 updateTaskStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
 updateTaskStatus newStatus tasks taskId currentTime =

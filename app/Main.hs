@@ -30,6 +30,7 @@ data SubCommand
   | StartTask Tasks.TaskId
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
+  | Clear
   | Today Text
 
 optsParser :: ParserInfo Opts
@@ -51,7 +52,8 @@ optsParser = info (helper <*> programOptions) description
       cancelTaskCommand <>
       startTaskCommand <>
       updateTaskTextCommand <>
-      moveTaskCommand
+      moveTaskCommand <>
+      clearCommand
     reporterCommands :: Mod CommandFields SubCommand
     reporterCommands = commandGroup "Reporters:" <> todayCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
@@ -119,6 +121,11 @@ optsParser = info (helper <*> programOptions) description
     moveTaskOptions =
       Move <$> argument auto (help "ID of the task to update") <*>
       textArgument (help "Context of the task")
+    clearCommand :: Mod CommandFields SubCommand
+    clearCommand =
+      command
+        "clear"
+        (info (pure Clear) (progDesc "Clears done and cancelled tasks"))
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
       command
@@ -150,6 +157,7 @@ update sc currentTime tasks =
       where text = T.intercalate " " textFrags
     Move taskId context ->
       Tasks.updateTaskContext context tasks taskId currentTime
+    Clear -> Right (Tasks.clearCompleted tasks)
     Today context -> Right tasks
 
 view :: SubCommand -> Elapsed -> Tasks.Tasks -> IO ()
