@@ -71,8 +71,8 @@ newTaskId tasks =
     [] -> 1
     keys -> Prelude.maximum keys + 1
 
-addTask :: Tasks -> Text -> Elapsed -> Context -> Tasks
-addTask tasks text currentTime context =
+addTask :: Text -> Elapsed -> Context -> Tasks -> Tasks
+addTask text currentTime context tasks =
   let taskId = newTaskId tasks
       task = Task Pending text currentTime context
    in Map.insert taskId task tasks

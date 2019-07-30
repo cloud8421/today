@@ -12,20 +12,20 @@ main =
     describe "task id" $ do
       it "defaults to 1" $ \_ -> Tasks.newTaskId Tasks.emptyTasks `shouldBe` 1
       it "generates a valid id" $ \currentTime -> do
-        let tasks = Tasks.addTask Tasks.emptyTasks "Example" currentTime "work"
+        let tasks = Tasks.addTask "Example" currentTime "work" Tasks.emptyTasks
         Tasks.newTaskId tasks `shouldBe` 2
     describe "add and remove tasks" $ do
       it "can add a task" $ \currentTime -> do
-        let tasks = Tasks.addTask Tasks.emptyTasks "Example" currentTime "work"
+        let tasks = Tasks.addTask "Example" currentTime "work" Tasks.emptyTasks
         Tasks.totalCount tasks `shouldBe` 1
       it "can remove a task" $ \currentTime -> do
-        let tasks = Tasks.addTask Tasks.emptyTasks "Example" currentTime "work"
+        let tasks = Tasks.addTask "Example" currentTime "work" Tasks.emptyTasks
         Tasks.totalCount (Tasks.removeTask tasks 1) `shouldBe` 0
     describe "update task status" $ do
       context "for an existing task" $
         it "updates the task status" $ \currentTime -> do
           let tasks =
-                Tasks.addTask Tasks.emptyTasks "Example" currentTime "work"
+                Tasks.addTask "Example" currentTime "work" Tasks.emptyTasks
           Tasks.countByStatus Tasks.Pending tasks `shouldBe` 1
           let Right newTasks =
                 Tasks.updateTaskStatus Tasks.Progress tasks 1 currentTime

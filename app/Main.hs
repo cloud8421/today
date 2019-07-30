@@ -154,7 +154,7 @@ update :: SubCommand -> Elapsed -> Tasks.Tasks -> Either String Tasks.Tasks
 update sc currentTime tasks =
   case sc of
     AddTask taskContext textFrags ->
-      Right (Tasks.addTask tasks text currentTime taskContext)
+      Right (Tasks.addTask text currentTime taskContext tasks)
       where text = T.intercalate " " textFrags
     ListTasks -> Right tasks
     DeleteTask taskId -> Right (Tasks.removeTask tasks taskId)
