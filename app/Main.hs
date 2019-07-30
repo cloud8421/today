@@ -28,6 +28,7 @@ data SubCommand
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
   | StartTask Tasks.TaskId
+  | PauseTask Tasks.TaskId
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
@@ -52,6 +53,7 @@ optsParser = info (helper <*> programOptions) description
       checkTaskCommand <>
       cancelTaskCommand <>
       startTaskCommand <>
+      pauseTaskCommand <>
       updateTaskTextCommand <>
       moveTaskCommand <>
       clearCommand
@@ -105,6 +107,11 @@ optsParser = info (helper <*> programOptions) description
       command "start" (info startOptions (progDesc "Start an existing task"))
     startOptions :: Parser SubCommand
     startOptions = StartTask <$> argument auto (help "ID of the task to start")
+    pauseTaskCommand :: Mod CommandFields SubCommand
+    pauseTaskCommand =
+      command "pause" (info pauseOptions (progDesc "Pauses an existing task"))
+    pauseOptions :: Parser SubCommand
+    pauseOptions = PauseTask <$> argument auto (help "ID of the task to start")
     updateTaskTextCommand :: Mod CommandFields SubCommand
     updateTaskTextCommand =
       command
@@ -157,6 +164,8 @@ update sc currentTime tasks =
       Tasks.updateTaskStatus Tasks.Cancelled tasks taskId currentTime
     StartTask taskId ->
       Tasks.updateTaskStatus Tasks.Progress tasks taskId currentTime
+    PauseTask taskId ->
+      Tasks.updateTaskStatus Tasks.Pending tasks taskId currentTime
     Update taskId textFrags ->
       Tasks.updateTaskText text tasks taskId currentTime
       where text = T.intercalate " " textFrags
