@@ -3,6 +3,7 @@
 module Ui
   ( render
   , showToday
+  , showTodayByContext
   , displayError
   ) where
 
@@ -47,7 +48,7 @@ displayGroupHeader context tasks = do
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
 displayTasks :: Tasks -> Elapsed -> IO ()
-displayTasks tasks currentTime = mapM_ displayTask (toList tasks)
+displayTasks tasks currentTime = mapM_ displayTask (toListWithId tasks)
   where
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
@@ -123,7 +124,8 @@ displayText status text =
       TIO.putStr text
 
 displayTaskGroups :: Tasks -> Elapsed -> IO ()
-displayTaskGroups tasks currentTime = mapM_ displayGroup (toList taskGroups)
+displayTaskGroups tasks currentTime =
+  mapM_ displayGroup (toListWithId taskGroups)
   where
     taskGroups = groupByContext tasks
     displayGroup (context, groupTasks) = do
@@ -131,18 +133,31 @@ displayTaskGroups tasks currentTime = mapM_ displayGroup (toList taskGroups)
       displayTasks groupTasks currentTime
       spacer
 
-showToday :: Context -> Tasks -> IO ()
-showToday c tasks = do
+todayList :: [Task] -> IO ()
+todayList [] = do
+  spacer
+  TIO.putStrLn (padLeft "No tasks available")
+  spacer
+todayList tasks = do
   spacer
   TIO.putStrLn "*Today:*"
-  mapM_ taskLine contextTasks
+  mapM_ taskLine tasks
   spacer
   where
-    taskLine (id, task) = do
+    taskLine task = do
       TIO.putStr "• "
       TIO.putStrLn (text task)
-    taskForToday (id, task) = context task == c && started task
-    contextTasks = L.filter taskForToday (toList tasks)
+
+showToday :: Tasks -> IO ()
+showToday tasks = todayList todayTasks
+  where
+    todayTasks = L.filter started (toList tasks)
+
+showTodayByContext :: Context -> Tasks -> IO ()
+showTodayByContext c tasks = todayList todayTasks
+  where
+    taskForToday task = context task == c && started task
+    todayTasks = L.filter taskForToday (toList tasks)
 
 displayEmpty :: IO ()
 displayEmpty = do

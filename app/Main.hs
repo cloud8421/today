@@ -31,7 +31,8 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
-  | Today Text
+  | Today
+  | TodayByContext Text
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -55,7 +56,8 @@ optsParser = info (helper <*> programOptions) description
       moveTaskCommand <>
       clearCommand
     reporterCommands :: Mod CommandFields SubCommand
-    reporterCommands = commandGroup "Reporters:" <> todayCommand
+    reporterCommands =
+      commandGroup "Reporters:" <> todayCommand <> todayByContextCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
     textArgument = fmap pack . strArgument
     textOption :: Mod OptionFields String -> Parser Text
@@ -128,14 +130,17 @@ optsParser = info (helper <*> programOptions) description
         (info (pure Clear) (progDesc "Clears done and cancelled tasks"))
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
+      command "today" (info (pure Today) (progDesc "Generate a today summary"))
+    todayByContextCommand :: Mod CommandFields SubCommand
+    todayByContextCommand =
       command
-        "today"
+        "today_by_context"
         (info
-           todayOptions
+           todayByContextOptions
            (progDesc "Generate a today summary for the given context"))
-    todayOptions :: Parser SubCommand
-    todayOptions =
-      Today <$>
+    todayByContextOptions :: Parser SubCommand
+    todayByContextOptions =
+      TodayByContext <$>
       textArgument (help "The context to generate the today message for")
 
 update :: SubCommand -> Elapsed -> Tasks.Tasks -> Either String Tasks.Tasks
@@ -158,12 +163,14 @@ update sc currentTime tasks =
     Move taskId context ->
       Tasks.updateTaskContext context tasks taskId currentTime
     Clear -> Right (Tasks.clearCompleted tasks)
-    Today context -> Right tasks
+    Today -> Right tasks
+    TodayByContext context -> Right tasks
 
 view :: SubCommand -> Elapsed -> Tasks.Tasks -> IO ()
 view sc currentTime tasks =
   case sc of
-    Today context -> Ui.showToday context tasks
+    Today -> Ui.showToday tasks
+    TodayByContext context -> Ui.showTodayByContext context tasks
     other -> Ui.render tasks currentTime
 
 main :: IO ()

@@ -11,6 +11,7 @@ module Tasks
   , clearCompleted
   , countByStatus
   , groupByContext
+  , toListWithId
   , toList
   , addTask
   , removeTask
@@ -151,5 +152,8 @@ groupByContext = Map.foldlWithKey' mergeContexts Map.empty
         Just otherTasks -> Just (Map.insert taskId task otherTasks)
         Nothing -> Just (Map.fromList [(taskId, task)])
 
-toList :: Map.HashMap k v -> [(k, v)]
-toList = Map.toList
+toListWithId :: Map.HashMap k v -> [(k, v)]
+toListWithId = Map.toList
+
+toList :: Map.HashMap k v -> [v]
+toList = Map.elems
