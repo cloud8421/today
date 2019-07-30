@@ -39,9 +39,11 @@ formatContext = T.cons '@'
 displayGroupHeader :: Context -> Tasks -> IO ()
 displayGroupHeader context tasks = do
   setSGR [Reset]
-  TIO.putStr (padLeft (formatContext context))
+  TIO.putStr "  "
+  setSGR [Reset, SetUnderlining SingleUnderline]
+  TIO.putStr (formatContext context)
+  setSGR [Reset, SetColor Foreground Vivid Black]
   TIO.putStr " "
-  setSGR [SetColor Foreground Vivid Black]
   putStrLn inboxCount
   setSGR [Reset]
   where
