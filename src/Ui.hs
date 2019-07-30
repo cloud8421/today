@@ -8,6 +8,7 @@ module Ui
   ) where
 
 import qualified Data.List as L
+import qualified Data.Sort as Sort
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import System.Console.ANSI
@@ -50,8 +51,10 @@ displayGroupHeader context tasks = do
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
 displayTasks :: Tasks -> Elapsed -> IO ()
-displayTasks tasks currentTime = mapM_ displayTask (toListWithId tasks)
+displayTasks tasks currentTime = mapM_ displayTask orderedTasks
   where
+    orderedTasks =
+      Sort.sortOn (\(id, task) -> -lastUpdate task) (toListWithId tasks)
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr (T.pack (printf "%5d." id))
