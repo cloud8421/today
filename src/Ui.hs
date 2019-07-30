@@ -52,7 +52,7 @@ displayTasks tasks currentTime = mapM_ displayTask (toListWithId tasks)
   where
     displayTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
-      TIO.putStr (padLeft (padLeft (T.pack (printf "%d." id))))
+      TIO.putStr (T.pack (printf "%5d." id))
       TIO.putStr " "
       displayStatus (status task)
       TIO.putStr "  "
