@@ -20,7 +20,10 @@ module Tasks
   , updateTaskText
   , age
   , started
+  , refs
+  , resolveRef
   , Context
+  , Ref(..)
   , Task(..)
   , Status(..)
   , TaskId
@@ -35,6 +38,7 @@ import qualified Data.List as L
 import Data.Maybe
 import Data.Text
 import GHC.Generics
+import Text.Regex.PCRE
 import Time.Types (Elapsed, Seconds)
 
 data Status
@@ -54,6 +58,18 @@ data Task =
     , context :: Context
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
+
+type Repo = Text
+
+type RepoPath = Text
+
+data Ref =
+  Ref
+    { repo :: Repo
+    , issueNumber :: Text
+    }
+
+type RefMap = Map.HashMap Repo RepoPath
 
 type TaskId = Int
 
@@ -151,6 +167,34 @@ groupByContext = Map.foldlWithKey' mergeContexts Map.empty
       case maybeOtherTasks of
         Just otherTasks -> Just (Map.insert taskId task otherTasks)
         Nothing -> Just (Map.fromList [(taskId, task)])
+
+refs :: Task -> [Ref]
+refs task = L.map (\[s, issueNo] -> Ref s issueNo) matches
+  where
+    matcher :: String
+    matcher = "(\\w*#\\d+)"
+    result :: AllTextMatches [] String
+    result = unpack (text task) =~ matcher
+    rawMatches = getAllTextMatches result
+    matches = L.map (splitOn "#" . pack) rawMatches
+
+refMap :: RefMap
+refMap =
+  Map.fromList
+    [ ("CORE", "pspdfkit/pspdfkit")
+    , ("SERVER", "pspdfkit/pssync-server")
+    , ("WEB", "pspdfkit/PSPDFKIT-Web")
+    ]
+
+resolveRef :: Ref -> Text
+resolveRef ref =
+  case Map.lookup (repo ref) refMap of
+    Just repoPath ->
+      intercalate
+        "/"
+        ["https://github.com", repoPath, "issues", issueNumber ref]
+    Nothing -> Data.Text.unwords ["Cannot resolve", refString]
+      where refString = intercalate "#" [repo ref, issueNumber ref]
 
 toListWithId :: Map.HashMap k v -> [(k, v)]
 toListWithId = Map.toList

@@ -50,6 +50,13 @@ displayGroupHeader context tasks = do
   where
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
+displayTaskRefs :: Task -> IO ()
+displayTaskRefs task = mapM_ displayTaskRef (refs task)
+  where
+    displayTaskRef ref = do
+      TIO.putStr "          • "
+      TIO.putStrLn (resolveRef ref)
+
 displayTasks :: Tasks -> Elapsed -> IO ()
 displayTasks tasks currentTime = mapM_ displayTask orderedTasks
   where
@@ -65,6 +72,7 @@ displayTasks tasks currentTime = mapM_ displayTask orderedTasks
       TIO.putStr " "
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStrLn (formatSeconds (age task currentTime))
+      displayTaskRefs task
 
 displayStats :: Tasks -> IO ()
 displayStats tasks = do

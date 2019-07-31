@@ -28,6 +28,7 @@ dependencies:
 - hourglass
 - hourglass-orphans
 - optparse-applicative
+- regex-pcre
 - sort
 - text
 - time
