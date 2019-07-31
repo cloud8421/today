@@ -4,6 +4,7 @@
 
 module Tasks
   ( emptyTasks
+  , emptyRefMap
   , newTaskId
   , defaultContext
   , defaultTasks
@@ -24,6 +25,7 @@ module Tasks
   , resolveRef
   , Context
   , Ref(..)
+  , RefMap
   , Task(..)
   , Status(..)
   , TaskId
@@ -77,6 +79,9 @@ type Tasks = Map.HashMap TaskId Task
 
 emptyTasks :: Tasks
 emptyTasks = Map.empty
+
+emptyRefMap :: RefMap
+emptyRefMap = Map.empty
 
 defaultContext :: String
 defaultContext = "inbox"
@@ -178,16 +183,8 @@ refs task = L.map (\[s, issueNo] -> Ref s issueNo) matches
     rawMatches = getAllTextMatches result
     matches = L.map (splitOn "#" . pack) rawMatches
 
-refMap :: RefMap
-refMap =
-  Map.fromList
-    [ ("CORE", "pspdfkit/pspdfkit")
-    , ("SERVER", "pspdfkit/pssync-server")
-    , ("WEB", "pspdfkit/PSPDFKIT-Web")
-    ]
-
-resolveRef :: Ref -> Text
-resolveRef ref =
+resolveRef :: Ref -> RefMap -> Text
+resolveRef ref refMap =
   case Map.lookup (repo ref) refMap of
     Just repoPath ->
       intercalate

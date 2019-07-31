@@ -50,15 +50,15 @@ displayGroupHeader context tasks = do
   where
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
-displayTaskRefs :: Task -> IO ()
-displayTaskRefs task = mapM_ displayTaskRef (refs task)
+displayTaskRefs :: Task -> RefMap -> IO ()
+displayTaskRefs task refMap = mapM_ displayTaskRef (refs task)
   where
     displayTaskRef ref = do
       TIO.putStr "          • "
-      TIO.putStrLn (resolveRef ref)
+      TIO.putStrLn (resolveRef ref refMap)
 
-displayTasks :: Tasks -> Elapsed -> IO ()
-displayTasks tasks currentTime = mapM_ displayTask orderedTasks
+displayTasks :: Tasks -> RefMap -> Elapsed -> IO ()
+displayTasks tasks refMap currentTime = mapM_ displayTask orderedTasks
   where
     orderedTasks =
       Sort.sortOn (\(id, task) -> -lastUpdate task) (toListWithId tasks)
@@ -72,7 +72,7 @@ displayTasks tasks currentTime = mapM_ displayTask orderedTasks
       TIO.putStr " "
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStrLn (formatSeconds (age task currentTime))
-      displayTaskRefs task
+      displayTaskRefs task refMap
 
 displayStats :: Tasks -> IO ()
 displayStats tasks = do
@@ -136,14 +136,14 @@ displayText status text =
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr text
 
-displayTaskGroups :: Tasks -> Elapsed -> IO ()
-displayTaskGroups tasks currentTime =
+displayTaskGroups :: Tasks -> RefMap -> Elapsed -> IO ()
+displayTaskGroups tasks refMap currentTime =
   mapM_ displayGroup (toListWithId taskGroups)
   where
     taskGroups = groupByContext tasks
     displayGroup (context, groupTasks) = do
       displayGroupHeader context groupTasks
-      displayTasks groupTasks currentTime
+      displayTasks groupTasks refMap currentTime
       spacer
 
 todayList :: [Task] -> IO ()
@@ -178,8 +178,8 @@ displayEmpty = do
   spacer
   TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
 
-render :: Tasks -> Elapsed -> IO ()
-render tasks currentTime = do
+render :: Tasks -> RefMap -> Elapsed -> IO ()
+render tasks refMap currentTime = do
   spacer
   body
   spacer
@@ -188,7 +188,7 @@ render tasks currentTime = do
       case totalCount tasks of
         0 -> displayEmpty
         other -> do
-          displayTaskGroups tasks currentTime
+          displayTaskGroups tasks refMap currentTime
           displayStats tasks
 
 displayError :: String -> IO ()

@@ -175,24 +175,27 @@ update sc currentTime tasks =
     Today -> Right tasks
     TodayByContext context -> Right tasks
 
-view :: SubCommand -> Elapsed -> Tasks.Tasks -> IO ()
-view sc currentTime tasks =
+view :: SubCommand -> Elapsed -> Tasks.Tasks -> Tasks.RefMap -> IO ()
+view sc currentTime tasks refMap =
   case sc of
     Today -> Ui.showToday tasks
     TodayByContext context -> Ui.showTodayByContext context tasks
-    other -> Ui.render tasks currentTime
+    other -> Ui.render tasks refMap currentTime
 
 main :: IO ()
 main = do
   (opts :: Opts) <- execParser optsParser
   currentTime <- liftIO timeCurrent
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
-  Taskfile.ensure resolvedTaskFilePath (Tasks.defaultTasks currentTime)
+  Taskfile.ensure
+    resolvedTaskFilePath
+    (Tasks.defaultTasks currentTime)
+    Tasks.emptyRefMap
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.displayError err
     Right taskfile ->
       case update (subCommand opts) currentTime (Taskfile.tasks taskfile) of
         Right newTasks -> do
-          Taskfile.create resolvedTaskFilePath newTasks
-          view (subCommand opts) currentTime newTasks
+          Taskfile.create resolvedTaskFilePath newTasks (Taskfile.refs taskfile)
+          view (subCommand opts) currentTime newTasks (Taskfile.refs taskfile)
         Left err -> Ui.displayError err
