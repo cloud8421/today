@@ -150,37 +150,85 @@ optsParser = info (helper <*> programOptions) description
       TodayByContext <$>
       textArgument (help "The context to generate the today message for")
 
-update :: SubCommand -> Elapsed -> Tasks.Tasks -> Either String Tasks.Tasks
-update sc currentTime tasks =
+update ::
+     SubCommand
+  -> Elapsed
+  -> Taskfile.Taskfile
+  -> Either String Taskfile.Taskfile
+update sc currentTime taskfile =
   case sc of
     AddTask taskContext textFrags ->
-      Right (Tasks.addTask text currentTime taskContext tasks)
+      Right (Taskfile.updateTasks newTasks taskfile)
       where text = T.intercalate " " textFrags
-    ListTasks -> Right tasks
-    DeleteTask taskId -> Right (Tasks.removeTask tasks taskId)
+            newTasks =
+              Tasks.addTask
+                text
+                currentTime
+                taskContext
+                (Taskfile.tasks taskfile)
+    ListTasks -> Right taskfile
+    DeleteTask taskId -> Right (Taskfile.updateTasks newTasks taskfile)
+      where newTasks = Tasks.removeTask (Taskfile.tasks taskfile) taskId
     CheckTask taskId ->
-      Tasks.updateTaskStatus Tasks.Done tasks taskId currentTime
+      case Tasks.updateTaskStatus
+             Tasks.Done
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
     CancelTask taskId ->
-      Tasks.updateTaskStatus Tasks.Cancelled tasks taskId currentTime
+      case Tasks.updateTaskStatus
+             Tasks.Cancelled
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
     StartTask taskId ->
-      Tasks.updateTaskStatus Tasks.Progress tasks taskId currentTime
+      case Tasks.updateTaskStatus
+             Tasks.Progress
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
     PauseTask taskId ->
-      Tasks.updateTaskStatus Tasks.Pending tasks taskId currentTime
+      case Tasks.updateTaskStatus
+             Tasks.Pending
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
     Update taskId textFrags ->
-      Tasks.updateTaskText text tasks taskId currentTime
+      case Tasks.updateTaskText
+             text
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
       where text = T.intercalate " " textFrags
     Move taskId context ->
-      Tasks.updateTaskContext context tasks taskId currentTime
-    Clear -> Right (Tasks.clearCompleted tasks)
-    Today -> Right tasks
-    TodayByContext context -> Right tasks
+      case Tasks.updateTaskContext
+             context
+             (Taskfile.tasks taskfile)
+             taskId
+             currentTime of
+        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
+        Left err -> Left err
+    Clear -> Right (Taskfile.updateTasks newTasks taskfile)
+      where newTasks = Tasks.clearCompleted (Taskfile.tasks taskfile)
+    Today -> Right taskfile
+    TodayByContext context -> Right taskfile
 
-view :: SubCommand -> Elapsed -> Tasks.Tasks -> Tasks.RefMap -> IO ()
-view sc currentTime tasks refMap =
+view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
+view sc currentTime taskfile =
   case sc of
-    Today -> Ui.showToday tasks refMap
-    TodayByContext context -> Ui.showTodayByContext context tasks refMap
-    other -> Ui.render tasks refMap currentTime
+    Today -> Ui.showToday taskfile
+    TodayByContext context -> Ui.showTodayByContext context taskfile
+    other -> Ui.render taskfile currentTime
 
 main :: IO ()
 main = do
@@ -193,10 +241,8 @@ main = do
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.displayError err
     Right taskfile ->
-      case update (subCommand opts) currentTime (Taskfile.tasks taskfile) of
-        Right newTasks -> do
-          Taskfile.create
-            resolvedTaskFilePath
-            (taskfile {Taskfile.tasks = newTasks})
-          view (subCommand opts) currentTime newTasks (Taskfile.refs taskfile)
+      case update (subCommand opts) currentTime taskfile of
+        Right newTaskfile -> do
+          Taskfile.create resolvedTaskFilePath newTaskfile
+          view (subCommand opts) currentTime newTaskfile
         Left err -> Ui.displayError err

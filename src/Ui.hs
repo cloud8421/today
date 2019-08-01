@@ -12,6 +12,7 @@ import qualified Data.Sort as Sort
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import System.Console.ANSI
+import qualified Taskfile
 import Tasks
 import Text.Printf
 import Time.Types (Elapsed, Seconds)
@@ -136,14 +137,14 @@ displayText status text =
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr text
 
-displayTaskGroups :: Tasks -> RefMap -> Elapsed -> IO ()
-displayTaskGroups tasks refMap currentTime =
+displayTaskGroups :: Taskfile.Taskfile -> Elapsed -> IO ()
+displayTaskGroups taskfile currentTime =
   mapM_ displayGroup (toListWithId taskGroups)
   where
-    taskGroups = groupByContext tasks
+    taskGroups = groupByContext (Taskfile.tasks taskfile)
     displayGroup (context, groupTasks) = do
       displayGroupHeader context groupTasks
-      displayTasks groupTasks refMap currentTime
+      displayTasks groupTasks (Taskfile.refs taskfile) currentTime
       spacer
 
 todayList :: [Task] -> RefMap -> IO ()
@@ -161,16 +162,16 @@ todayList tasks refMap = do
       TIO.putStr "• "
       TIO.putStrLn (expandRefs task refMap)
 
-showToday :: Tasks -> RefMap -> IO ()
-showToday tasks = todayList todayTasks
+showToday :: Taskfile.Taskfile -> IO ()
+showToday taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
-    todayTasks = L.filter started (toList tasks)
+    todayTasks = L.filter started (toList (Taskfile.tasks taskfile))
 
-showTodayByContext :: Context -> Tasks -> RefMap -> IO ()
-showTodayByContext c tasks = todayList todayTasks
+showTodayByContext :: Context -> Taskfile.Taskfile -> IO ()
+showTodayByContext c taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
     taskForToday task = context task == c && started task
-    todayTasks = L.filter taskForToday (toList tasks)
+    todayTasks = L.filter taskForToday (toList (Taskfile.tasks taskfile))
 
 displayEmpty :: IO ()
 displayEmpty = do
@@ -178,18 +179,18 @@ displayEmpty = do
   spacer
   TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
 
-render :: Tasks -> RefMap -> Elapsed -> IO ()
-render tasks refMap currentTime = do
+render :: Taskfile.Taskfile -> Elapsed -> IO ()
+render taskfile currentTime = do
   spacer
   body
   spacer
   where
     body =
-      case totalCount tasks of
+      case totalCount (Taskfile.tasks taskfile) of
         0 -> displayEmpty
         other -> do
-          displayTaskGroups tasks refMap currentTime
-          displayStats tasks
+          displayTaskGroups taskfile currentTime
+          displayStats (Taskfile.tasks taskfile)
 
 displayError :: String -> IO ()
 displayError err = do

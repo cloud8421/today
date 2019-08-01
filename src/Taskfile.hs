@@ -41,3 +41,9 @@ load path = eitherDecode <$> B.readFile path
 
 resolveFromEnv :: FilePath -> IO FilePath
 resolveFromEnv fallback = fromMaybeM (return fallback) (lookupEnv "TASKFILE")
+
+updateTasks :: Tasks -> Taskfile -> Taskfile
+updateTasks newTasks taskfile = taskfile {tasks = newTasks}
+
+updateRefs :: RefMap -> Taskfile -> Taskfile
+updateRefs newRefs taskfile = taskfile {refs = newRefs}
