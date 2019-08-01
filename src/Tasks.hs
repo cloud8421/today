@@ -23,6 +23,7 @@ module Tasks
   , started
   , refs
   , resolveRef
+  , expandRefs
   , Context
   , Ref(..)
   , RefMap
@@ -176,22 +177,40 @@ groupByContext = Map.foldlWithKey' mergeContexts Map.empty
 refs :: Task -> [Ref]
 refs task = L.map (\[s, issueNo] -> Ref s issueNo) matches
   where
-    matcher :: String
-    matcher = "(\\w*#\\d+)"
     result :: AllTextMatches [] String
-    result = unpack (text task) =~ matcher
+    result = unpack (text task) =~ refMatcher
     rawMatches = getAllTextMatches result
     matches = L.map (splitOn "#" . pack) rawMatches
 
 resolveRef :: Ref -> RefMap -> Text
 resolveRef ref refMap =
   case Map.lookup (repo ref) refMap of
-    Just repoPath ->
-      intercalate
-        "/"
-        ["https://github.com", repoPath, "issues", issueNumber ref]
+    Just repoPath -> buildRefUrl ref repoPath
     Nothing -> Data.Text.unwords ["Cannot resolve", refString]
       where refString = intercalate "#" [repo ref, issueNumber ref]
+
+expandRefs :: Task -> RefMap -> Text
+expandRefs task refMap = L.foldl expandRef (text task) matches
+  where
+    result :: AllTextMatches [] String
+    result = unpack (text task) =~ refMatcher
+    rawMatches :: [String]
+    rawMatches = getAllTextMatches result
+    matches :: [Text]
+    matches = L.map pack rawMatches
+    expandRef t match =
+      let ref = Ref s issueNo
+          [s, issueNo] = splitOn "#" match
+       in case Map.lookup (repo ref) refMap of
+            Just repoPath -> replace match (buildRefUrl ref repoPath) t
+            Nothing -> t
+
+refMatcher :: String
+refMatcher = "(\\w*#\\d+)"
+
+buildRefUrl :: Ref -> RepoPath -> Text
+buildRefUrl ref repoPath =
+  intercalate "/" ["https://github.com", repoPath, "issues", issueNumber ref]
 
 toListWithId :: Map.HashMap k v -> [(k, v)]
 toListWithId = Map.toList

@@ -146,12 +146,12 @@ displayTaskGroups tasks refMap currentTime =
       displayTasks groupTasks refMap currentTime
       spacer
 
-todayList :: [Task] -> IO ()
-todayList [] = do
+todayList :: [Task] -> RefMap -> IO ()
+todayList [] refMap = do
   spacer
   TIO.putStrLn (padLeft "No tasks available")
   spacer
-todayList tasks = do
+todayList tasks refMap = do
   spacer
   TIO.putStrLn "*Today:*"
   mapM_ taskLine tasks
@@ -159,14 +159,14 @@ todayList tasks = do
   where
     taskLine task = do
       TIO.putStr "• "
-      TIO.putStrLn (text task)
+      TIO.putStrLn (expandRefs task refMap)
 
-showToday :: Tasks -> IO ()
+showToday :: Tasks -> RefMap -> IO ()
 showToday tasks = todayList todayTasks
   where
     todayTasks = L.filter started (toList tasks)
 
-showTodayByContext :: Context -> Tasks -> IO ()
+showTodayByContext :: Context -> Tasks -> RefMap -> IO ()
 showTodayByContext c tasks = todayList todayTasks
   where
     taskForToday task = context task == c && started task

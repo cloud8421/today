@@ -178,8 +178,8 @@ update sc currentTime tasks =
 view :: SubCommand -> Elapsed -> Tasks.Tasks -> Tasks.RefMap -> IO ()
 view sc currentTime tasks refMap =
   case sc of
-    Today -> Ui.showToday tasks
-    TodayByContext context -> Ui.showTodayByContext context tasks
+    Today -> Ui.showToday tasks refMap
+    TodayByContext context -> Ui.showTodayByContext context tasks refMap
     other -> Ui.render tasks refMap currentTime
 
 main :: IO ()
