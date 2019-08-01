@@ -57,6 +57,8 @@ showTaskRefs task refMap = mapM_ showTaskRef (refs task)
   where
     showTaskRef ref = do
       TIO.putStr "          • "
+      TIO.putStr (refId ref)
+      TIO.putStr ": "
       TIO.putStrLn (resolveRef ref refMap)
 
 showGroupBody :: Tasks -> RefMap -> Elapsed -> IO ()

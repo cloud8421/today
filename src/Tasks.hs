@@ -22,6 +22,7 @@ module Tasks
   , age
   , started
   , refs
+  , refId
   , resolveRef
   , expandRefs
   , setRef
@@ -215,6 +216,9 @@ refMatcher = "(\\w*#\\d+)"
 buildRefUrl :: Ref -> RepoPath -> Text
 buildRefUrl ref repoPath =
   intercalate "/" ["https://github.com", repoPath, "issues", issueNumber ref]
+
+refId :: Ref -> Text
+refId ref = intercalate "#" [repo ref, issueNumber ref]
 
 setRef :: Repo -> RepoPath -> RefMap -> RefMap
 setRef = Map.insert
