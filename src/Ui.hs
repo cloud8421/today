@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ui
-  ( render
+  ( showTasks
   , showToday
   , showTodayByContext
-  , displayError
+  , showRefs
+  , showError
   ) where
 
 import qualified Data.List as L
@@ -38,8 +39,8 @@ formatSeconds seconds = T.pack (humanDuration seconds)
 formatContext :: Context -> T.Text
 formatContext = T.cons '@'
 
-displayGroupHeader :: Context -> Tasks -> IO ()
-displayGroupHeader context tasks = do
+showGroupHeader :: Context -> Tasks -> IO ()
+showGroupHeader context tasks = do
   setSGR [Reset]
   TIO.putStr "  "
   setSGR [Reset, SetUnderlining SingleUnderline]
@@ -51,32 +52,32 @@ displayGroupHeader context tasks = do
   where
     inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
 
-displayTaskRefs :: Task -> RefMap -> IO ()
-displayTaskRefs task refMap = mapM_ displayTaskRef (refs task)
+showTaskRefs :: Task -> RefMap -> IO ()
+showTaskRefs task refMap = mapM_ showTaskRef (refs task)
   where
-    displayTaskRef ref = do
+    showTaskRef ref = do
       TIO.putStr "          • "
       TIO.putStrLn (resolveRef ref refMap)
 
-displayTasks :: Tasks -> RefMap -> Elapsed -> IO ()
-displayTasks tasks refMap currentTime = mapM_ displayTask orderedTasks
+showGroupBody :: Tasks -> RefMap -> Elapsed -> IO ()
+showGroupBody tasks refMap currentTime = mapM_ showTask orderedTasks
   where
     orderedTasks =
       Sort.sortOn (\(id, task) -> -lastUpdate task) (toListWithId tasks)
-    displayTask (id, task) = do
+    showTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr (T.pack (printf "%5d." id))
       TIO.putStr " "
-      displayStatus (status task)
+      showStatus (status task)
       TIO.putStr "  "
-      displayText (status task) (text task)
+      showText (status task) (text task)
       TIO.putStr " "
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStrLn (formatSeconds (age task currentTime))
-      displayTaskRefs task refMap
+      showTaskRefs task refMap
 
-displayStats :: Tasks -> IO ()
-displayStats tasks = do
+showStats :: Tasks -> IO ()
+showStats tasks = do
   setSGR [SetColor Foreground Vivid Black]
   TIO.putStrLn
     (padLeft (T.pack (printf "%0.f%% of all tasks complete." percentDone)))
@@ -105,8 +106,8 @@ displayStats tasks = do
         0 -> 0
         otherCount -> 100 * fromIntegral doneCount / fromIntegral otherCount
 
-displayStatus :: Status -> IO ()
-displayStatus status =
+showStatus :: Status -> IO ()
+showStatus status =
   case status of
     Done -> do
       setSGR [SetColor Foreground Vivid Green]
@@ -121,8 +122,8 @@ displayStatus status =
       setSGR [SetColor Foreground Vivid Red]
       TIO.putStr "✖"
 
-displayText :: Status -> T.Text -> IO ()
-displayText status text =
+showText :: Status -> T.Text -> IO ()
+showText status text =
   case status of
     Done -> do
       setSGR [SetColor Foreground Vivid Black]
@@ -137,14 +138,14 @@ displayText status text =
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr text
 
-displayTaskGroups :: Taskfile.Taskfile -> Elapsed -> IO ()
-displayTaskGroups taskfile currentTime =
-  mapM_ displayGroup (toListWithId taskGroups)
+showTaskGroups :: Taskfile.Taskfile -> Elapsed -> IO ()
+showTaskGroups taskfile currentTime =
+  mapM_ showTaskGroup (toListWithId taskGroups)
   where
     taskGroups = groupByContext (Taskfile.tasks taskfile)
-    displayGroup (context, groupTasks) = do
-      displayGroupHeader context groupTasks
-      displayTasks groupTasks (Taskfile.refs taskfile) currentTime
+    showTaskGroup (context, groupTasks) = do
+      showGroupHeader context groupTasks
+      showGroupBody groupTasks (Taskfile.refs taskfile) currentTime
       spacer
 
 todayList :: [Task] -> RefMap -> IO ()
@@ -173,27 +174,44 @@ showTodayByContext c taskfile = todayList todayTasks (Taskfile.refs taskfile)
     taskForToday task = context task == c && started task
     todayTasks = L.filter taskForToday (toList (Taskfile.tasks taskfile))
 
-displayEmpty :: IO ()
-displayEmpty = do
+showEmpty :: IO ()
+showEmpty = do
   TIO.putStrLn (padLeft "No tasks in your list. Enjoy some free time!")
   spacer
   TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
 
-render :: Taskfile.Taskfile -> Elapsed -> IO ()
-render taskfile currentTime = do
+showTasks :: Taskfile.Taskfile -> Elapsed -> IO ()
+showTasks taskfile currentTime = do
   spacer
   body
   spacer
   where
     body =
       case totalCount (Taskfile.tasks taskfile) of
-        0 -> displayEmpty
+        0 -> showEmpty
         other -> do
-          displayTaskGroups taskfile currentTime
-          displayStats (Taskfile.tasks taskfile)
+          showTaskGroups taskfile currentTime
+          showStats (Taskfile.tasks taskfile)
 
-displayError :: String -> IO ()
-displayError err = do
+showRefs :: RefMap -> IO ()
+showRefs refMap =
+  case totalCount refMap of
+    0 -> do
+      spacer
+      TIO.putStrLn "No ref lookup rules setup in the current Taskfile"
+      spacer
+    _other -> do
+      spacer
+      mapM_ showRef (toListWithId refMap)
+      spacer
+  where
+    showRef (repo, repoPath) = do
+      TIO.putStr (padLeft repo)
+      TIO.putStr " -> "
+      TIO.putStrLn repoPath
+
+showError :: String -> IO ()
+showError err = do
   setSGR [SetColor Foreground Vivid Red]
   putStrLn err
   setSGR [Reset]

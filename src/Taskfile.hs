@@ -46,4 +46,4 @@ updateTasks :: Tasks -> Taskfile -> Taskfile
 updateTasks newTasks taskfile = taskfile {tasks = newTasks}
 
 updateRefs :: RefMap -> Taskfile -> Taskfile
-updateRefs newRefs taskfile = taskfile {refs = newRefs}
+updateRefs newRefMap taskfile = taskfile {refs = newRefMap}

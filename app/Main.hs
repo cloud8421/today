@@ -34,6 +34,7 @@ data SubCommand
   | Clear
   | Today
   | TodayByContext Text
+  | ListRefs
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -45,7 +46,8 @@ optsParser = info (helper <*> programOptions) description
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
-      (hsubparser taskManagementCommands <|> hsubparser reporterCommands)
+      (hsubparser taskManagementCommands <|> hsubparser reporterCommands <|>
+       hsubparser refManagementCommands)
     taskManagementCommands :: Mod CommandFields SubCommand
     taskManagementCommands =
       commandGroup "Task management:" <> listTasksCommand <> addTaskCommand <>
@@ -60,6 +62,8 @@ optsParser = info (helper <*> programOptions) description
     reporterCommands :: Mod CommandFields SubCommand
     reporterCommands =
       commandGroup "Reporters:" <> todayCommand <> todayByContextCommand
+    refManagementCommands :: Mod CommandFields SubCommand
+    refManagementCommands = commandGroup "Refs management:" <> listRefsCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
     textArgument = fmap pack . strArgument
     textOption :: Mod OptionFields String -> Parser Text
@@ -149,6 +153,11 @@ optsParser = info (helper <*> programOptions) description
     todayByContextOptions =
       TodayByContext <$>
       textArgument (help "The context to generate the today message for")
+    listRefsCommand :: Mod CommandFields SubCommand
+    listRefsCommand =
+      command
+        "list_refs"
+        (info (pure ListRefs) (progDesc "Show currently configured ref lookups"))
 
 update ::
      SubCommand
@@ -222,13 +231,15 @@ update sc currentTime taskfile =
       where newTasks = Tasks.clearCompleted (Taskfile.tasks taskfile)
     Today -> Right taskfile
     TodayByContext context -> Right taskfile
+    ListRefs -> Right taskfile
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
   case sc of
     Today -> Ui.showToday taskfile
     TodayByContext context -> Ui.showTodayByContext context taskfile
-    other -> Ui.render taskfile currentTime
+    ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
+    other -> Ui.showTasks taskfile currentTime
 
 main :: IO ()
 main = do
@@ -239,10 +250,10 @@ main = do
     resolvedTaskFilePath
     (Taskfile.new (Tasks.defaultTasks currentTime) Tasks.emptyRefMap)
   Taskfile.load resolvedTaskFilePath >>= \case
-    Left err -> Ui.displayError err
+    Left err -> Ui.showError err
     Right taskfile ->
       case update (subCommand opts) currentTime taskfile of
         Right newTaskfile -> do
           Taskfile.create resolvedTaskFilePath newTaskfile
           view (subCommand opts) currentTime newTaskfile
-        Left err -> Ui.displayError err
+        Left err -> Ui.showError err

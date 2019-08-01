@@ -153,7 +153,7 @@ defaultTasks currentTime =
     , (3, Task Pending "Clean keyboard" currentTime "work")
     ]
 
-totalCount :: Tasks -> Int
+totalCount :: Map.HashMap k v -> Int
 totalCount = Map.size
 
 countByStatus :: Status -> Tasks -> Int
