@@ -27,14 +27,14 @@ currentVersion = 1
 defaultPath :: FilePath
 defaultPath = "./tasks.json"
 
-create :: FilePath -> Tasks -> RefMap -> IO ()
-create path tasks refMap = I.writeFile path (encodeToLazyText taskfile)
-  where
-    taskfile = Taskfile currentVersion tasks refMap
+new :: Tasks -> RefMap -> Taskfile
+new = Taskfile currentVersion
 
-ensure :: FilePath -> Tasks -> RefMap -> IO ()
-ensure path tasks refMap =
-  unlessM (doesFileExist path) (create path tasks refMap)
+create :: FilePath -> Taskfile -> IO ()
+create path taskfile = I.writeFile path (encodeToLazyText taskfile)
+
+ensure :: FilePath -> Taskfile -> IO ()
+ensure path taskfile = unlessM (doesFileExist path) (create path taskfile)
 
 load :: FilePath -> IO (Either String Taskfile)
 load path = eitherDecode <$> B.readFile path

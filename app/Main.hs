@@ -189,13 +189,14 @@ main = do
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure
     resolvedTaskFilePath
-    (Tasks.defaultTasks currentTime)
-    Tasks.emptyRefMap
+    (Taskfile.new (Tasks.defaultTasks currentTime) Tasks.emptyRefMap)
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.displayError err
     Right taskfile ->
       case update (subCommand opts) currentTime (Taskfile.tasks taskfile) of
         Right newTasks -> do
-          Taskfile.create resolvedTaskFilePath newTasks (Taskfile.refs taskfile)
+          Taskfile.create
+            resolvedTaskFilePath
+            (taskfile {Taskfile.tasks = newTasks})
           view (subCommand opts) currentTime newTasks (Taskfile.refs taskfile)
         Left err -> Ui.displayError err
