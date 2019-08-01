@@ -35,6 +35,8 @@ data SubCommand
   | Today
   | TodayByContext Text
   | ListRefs
+  | AddRef Tasks.Repo Tasks.RepoPath
+  | DeleteRef Tasks.Repo
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -63,7 +65,9 @@ optsParser = info (helper <*> programOptions) description
     reporterCommands =
       commandGroup "Reporters:" <> todayCommand <> todayByContextCommand
     refManagementCommands :: Mod CommandFields SubCommand
-    refManagementCommands = commandGroup "Refs management:" <> listRefsCommand
+    refManagementCommands =
+      commandGroup "Refs management:" <> listRefsCommand <> addRefCommand <>
+      deleteRefCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
     textArgument = fmap pack . strArgument
     textOption :: Mod OptionFields String -> Parser Text
@@ -158,6 +162,23 @@ optsParser = info (helper <*> programOptions) description
       command
         "list_refs"
         (info (pure ListRefs) (progDesc "Show currently configured ref lookups"))
+    addRefCommand :: Mod CommandFields SubCommand
+    addRefCommand =
+      command
+        "add_ref"
+        (info addRefOptions (progDesc "add a new ref lookup rule"))
+    addRefOptions :: Parser SubCommand
+    addRefOptions =
+      AddRef <$> textArgument (help "The repo name to use") <*>
+      textArgument (help "The github path the repo points to")
+    deleteRefCommand :: Mod CommandFields SubCommand
+    deleteRefCommand =
+      command
+        "delete_ref"
+        (info deleteRefOptions (progDesc "add a new ref lookup rule"))
+    deleteRefOptions :: Parser SubCommand
+    deleteRefOptions =
+      DeleteRef <$> textArgument (help "The repo name to delete")
 
 update ::
      SubCommand
@@ -232,6 +253,10 @@ update sc currentTime taskfile =
     Today -> Right taskfile
     TodayByContext context -> Right taskfile
     ListRefs -> Right taskfile
+    AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
+      where newRefs = Tasks.setRef repo repoPath (Taskfile.refs taskfile)
+    DeleteRef repo -> Right (Taskfile.updateRefs newRefs taskfile)
+      where newRefs = Tasks.removeRef repo (Taskfile.refs taskfile)
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
@@ -239,6 +264,8 @@ view sc currentTime taskfile =
     Today -> Ui.showToday taskfile
     TodayByContext context -> Ui.showTodayByContext context taskfile
     ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
+    AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
+    DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)
     other -> Ui.showTasks taskfile currentTime
 
 main :: IO ()

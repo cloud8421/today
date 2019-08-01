@@ -24,9 +24,13 @@ module Tasks
   , refs
   , resolveRef
   , expandRefs
+  , setRef
+  , removeRef
   , Context
   , Ref(..)
   , RefMap
+  , Repo
+  , RepoPath
   , Task(..)
   , Status(..)
   , TaskId
@@ -211,6 +215,12 @@ refMatcher = "(\\w*#\\d+)"
 buildRefUrl :: Ref -> RepoPath -> Text
 buildRefUrl ref repoPath =
   intercalate "/" ["https://github.com", repoPath, "issues", issueNumber ref]
+
+setRef :: Repo -> RepoPath -> RefMap -> RefMap
+setRef = Map.insert
+
+removeRef :: Repo -> RefMap -> RefMap
+removeRef = Map.delete
 
 toListWithId :: Map.HashMap k v -> [(k, v)]
 toListWithId = Map.toList
