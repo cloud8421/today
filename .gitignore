@@ -2,3 +2,4 @@
 t.cabal
 *~
 tasks.json
+.envrc
