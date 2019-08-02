@@ -12,6 +12,7 @@ import qualified Data.List as L
 import qualified Data.Sort as Sort
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import Refs
 import System.Console.ANSI
 import qualified Taskfile
 import Tasks

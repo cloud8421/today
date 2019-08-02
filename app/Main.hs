@@ -10,6 +10,7 @@ import Data.Either.Combinators (mapRight)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import Options.Applicative
+import qualified Refs
 import System.Hourglass (timeCurrent)
 import qualified Taskfile
 import qualified Tasks
@@ -36,8 +37,8 @@ data SubCommand
   | Today
   | TodayByContext Text
   | ListRefs
-  | AddRef Tasks.Repo Tasks.RepoPath
-  | DeleteRef Tasks.Repo
+  | AddRef Refs.Repo Refs.RepoPath
+  | DeleteRef Refs.Repo
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -228,9 +229,9 @@ update sc currentTime taskfile =
         TodayByContext context -> Right taskfile
         ListRefs -> Right taskfile
         AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
-          where newRefs = Tasks.setRef repo repoPath currentRefs
+          where newRefs = Refs.setRef repo repoPath currentRefs
         DeleteRef repo -> Right (Taskfile.updateRefs newRefs taskfile)
-          where newRefs = Tasks.removeRef repo currentRefs
+          where newRefs = Refs.removeRef repo currentRefs
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
@@ -249,7 +250,7 @@ main = do
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure
     resolvedTaskFilePath
-    (Taskfile.new (Tasks.defaultTasks currentTime) Tasks.emptyRefMap)
+    (Taskfile.new (Tasks.defaultTasks currentTime) Refs.emptyRefMap)
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.showError err
     Right taskfile ->

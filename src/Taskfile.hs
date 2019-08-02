@@ -9,9 +9,10 @@ import Data.Aeson.Text (encodeToLazyText)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Lazy.IO as I
 import GHC.Generics
+import Refs (RefMap)
 import System.Directory (doesFileExist)
 import System.Environment (lookupEnv)
-import Tasks (RefMap, Tasks)
+import Tasks (Tasks)
 
 data Taskfile =
   Taskfile

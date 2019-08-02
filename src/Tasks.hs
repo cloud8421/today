@@ -2,41 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Tasks
-  ( emptyTasks
-  , emptyRefMap
-  , newTaskId
-  , defaultContext
-  , defaultTasks
-  , totalCount
-  , clearCompleted
-  , countByStatus
-  , groupByContext
-  , toListWithId
-  , toList
-  , add
-  , remove
-  , updateContext
-  , updateStatus
-  , updateText
-  , age
-  , started
-  , refs
-  , refId
-  , resolveRef
-  , expandRefs
-  , setRef
-  , removeRef
-  , Context
-  , Ref(..)
-  , RefMap
-  , Repo
-  , RepoPath
-  , Task(..)
-  , Status(..)
-  , TaskId
-  , Tasks
-  ) where
+module Tasks where
 
 import Data.Aeson
 import qualified Data.HashMap.Strict as Map
@@ -46,6 +12,7 @@ import qualified Data.List as L
 import Data.Maybe
 import Data.Text
 import GHC.Generics
+import Refs
 import Text.Regex.PCRE
 import Time.Types (Elapsed, Seconds)
 
@@ -67,27 +34,12 @@ data Task =
     }
   deriving (Generic, Read, Show, Eq, ToJSON, FromJSON)
 
-type Repo = Text
-
-type RepoPath = Text
-
-data Ref =
-  Ref
-    { repo :: Repo
-    , issueNumber :: Text
-    }
-
-type RefMap = Map.HashMap Repo RepoPath
-
 type TaskId = Int
 
 type Tasks = Map.HashMap TaskId Task
 
 emptyTasks :: Tasks
 emptyTasks = Map.empty
-
-emptyRefMap :: RefMap
-emptyRefMap = Map.empty
 
 defaultContext :: String
 defaultContext = "inbox"
@@ -186,13 +138,6 @@ refs task = L.map (\[s, issueNo] -> Ref s issueNo) matches
     rawMatches = getAllTextMatches result
     matches = L.map (splitOn "#" . pack) rawMatches
 
-resolveRef :: Ref -> RefMap -> Text
-resolveRef ref refMap =
-  case Map.lookup (repo ref) refMap of
-    Just repoPath -> buildRefUrl ref repoPath
-    Nothing -> Data.Text.unwords ["Cannot resolve", refString]
-      where refString = intercalate "#" [repo ref, issueNumber ref]
-
 expandRefs :: Task -> RefMap -> Text
 expandRefs task refMap = L.foldl expandRef (text task) matches
   where
@@ -208,22 +153,6 @@ expandRefs task refMap = L.foldl expandRef (text task) matches
        in case Map.lookup (repo ref) refMap of
             Just repoPath -> replace match (buildRefUrl ref repoPath) t
             Nothing -> t
-
-refMatcher :: String
-refMatcher = "(\\w*#\\d+)"
-
-buildRefUrl :: Ref -> RepoPath -> Text
-buildRefUrl ref repoPath =
-  intercalate "/" ["https://github.com", repoPath, "issues", issueNumber ref]
-
-refId :: Ref -> Text
-refId ref = intercalate "#" [repo ref, issueNumber ref]
-
-setRef :: Repo -> RepoPath -> RefMap -> RefMap
-setRef = Map.insert
-
-removeRef :: Repo -> RefMap -> RefMap
-removeRef = Map.delete
 
 toListWithId :: Map.HashMap k v -> [(k, v)]
 toListWithId = Map.toList
