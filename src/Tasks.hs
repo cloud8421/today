@@ -110,12 +110,11 @@ totalCount :: Map.HashMap k v -> Int
 totalCount = Map.size
 
 countByStatus :: Status -> Tasks -> Int
-countByStatus s tasks =
-  let operator count task =
-        if status task == s
-          then count + 1
-          else count
-   in Map.foldl' operator 0 tasks
+countByStatus s = Map.foldl' operator 0
+  where
+    operator count Task {status = taskStatus}
+      | taskStatus == s = count + 1
+      | otherwise = count
 
 groupByContext :: Tasks -> Map.HashMap Context Tasks
 groupByContext = Map.foldlWithKey' mergeContexts Map.empty
