@@ -165,7 +165,7 @@ todayList tasks refMap = do
   where
     taskLine task = do
       TIO.putStr "• "
-      TIO.putStrLn (expandRefs task refMap)
+      TIO.putStrLn (replaceRefs (text task) refMap)
 
 showToday :: Taskfile.Taskfile -> IO ()
 showToday taskfile = todayList todayTasks (Taskfile.refs taskfile)

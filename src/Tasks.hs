@@ -8,12 +8,9 @@ import Data.Aeson
 import qualified Data.HashMap.Strict as Map
 import Data.Hourglass (timeDiff)
 import Data.Hourglass.Types.Orphans
-import qualified Data.List as L
-import Data.Maybe
-import Data.Text
+import Data.Text (Text)
 import GHC.Generics
-import Refs
-import Text.Regex.PCRE
+import Refs (Ref, extractRefs)
 import Time.Types (Elapsed, Seconds)
 
 data Status
@@ -131,25 +128,4 @@ groupByContext = Map.foldlWithKey' mergeContexts Map.empty
         Nothing -> Just (Map.fromList [(taskId, task)])
 
 refs :: Task -> [Ref]
-refs task = L.map (\[s, issueNo] -> Ref s issueNo) matches
-  where
-    result :: AllTextMatches [] String
-    result = unpack (text task) =~ refMatcher
-    rawMatches = getAllTextMatches result
-    matches = L.map (splitOn "#" . pack) rawMatches
-
-expandRefs :: Task -> RefMap -> Text
-expandRefs task refMap = L.foldl expandRef (text task) matches
-  where
-    result :: AllTextMatches [] String
-    result = unpack (text task) =~ refMatcher
-    rawMatches :: [String]
-    rawMatches = getAllTextMatches result
-    matches :: [Text]
-    matches = L.map pack rawMatches
-    expandRef t match =
-      let ref = Ref s issueNo
-          [s, issueNo] = splitOn "#" match
-       in case Map.lookup (repo ref) refMap of
-            Just repoPath -> replace match (buildRefUrl ref repoPath) t
-            Nothing -> t
+refs = extractRefs . text
