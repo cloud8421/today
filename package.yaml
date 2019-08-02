@@ -24,6 +24,7 @@ dependencies:
 - ansi-terminal
 - bytestring
 - directory
+- either
 - extra
 - hourglass
 - hourglass-orphans

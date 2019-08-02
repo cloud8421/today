@@ -6,6 +6,7 @@ module Main where
 
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
+import Data.Either.Combinators (mapRight)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import Options.Applicative
@@ -188,7 +189,7 @@ update ::
 update sc currentTime taskfile =
   case sc of
     AddTask taskContext textFrags ->
-      Right (Taskfile.updateTasks newTasks taskfile)
+      Right (Taskfile.updateTasks taskfile newTasks)
       where text = T.intercalate " " textFrags
             newTasks =
               Tasks.addTask
@@ -197,58 +198,54 @@ update sc currentTime taskfile =
                 taskContext
                 (Taskfile.tasks taskfile)
     ListTasks -> Right taskfile
-    DeleteTask taskId -> Right (Taskfile.updateTasks newTasks taskfile)
+    DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
       where newTasks = Tasks.removeTask (Taskfile.tasks taskfile) taskId
     CheckTask taskId ->
-      case Tasks.updateTaskStatus
-             Tasks.Done
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskStatus
+           Tasks.Done
+           (Taskfile.tasks taskfile)
+           taskId
+           currentTime)
     CancelTask taskId ->
-      case Tasks.updateTaskStatus
-             Tasks.Cancelled
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskStatus
+           Tasks.Cancelled
+           (Taskfile.tasks taskfile)
+           taskId
+           currentTime)
     StartTask taskId ->
-      case Tasks.updateTaskStatus
-             Tasks.Progress
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskStatus
+           Tasks.Progress
+           (Taskfile.tasks taskfile)
+           taskId
+           currentTime)
     PauseTask taskId ->
-      case Tasks.updateTaskStatus
-             Tasks.Pending
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskStatus
+           Tasks.Pending
+           (Taskfile.tasks taskfile)
+           taskId
+           currentTime)
     Update taskId textFrags ->
-      case Tasks.updateTaskText
-             text
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskText text (Taskfile.tasks taskfile) taskId currentTime)
       where text = T.intercalate " " textFrags
     Move taskId context ->
-      case Tasks.updateTaskContext
-             context
-             (Taskfile.tasks taskfile)
-             taskId
-             currentTime of
-        Right newTasks -> Right (Taskfile.updateTasks newTasks taskfile)
-        Left err -> Left err
-    Clear -> Right (Taskfile.updateTasks newTasks taskfile)
+      mapRight
+        (Taskfile.updateTasks taskfile)
+        (Tasks.updateTaskContext
+           context
+           (Taskfile.tasks taskfile)
+           taskId
+           currentTime)
+    Clear -> Right (Taskfile.updateTasks taskfile newTasks)
       where newTasks = Tasks.clearCompleted (Taskfile.tasks taskfile)
     Today -> Right taskfile
     TodayByContext context -> Right taskfile
