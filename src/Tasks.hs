@@ -153,9 +153,3 @@ expandRefs task refMap = L.foldl expandRef (text task) matches
        in case Map.lookup (repo ref) refMap of
             Just repoPath -> replace match (buildRefUrl ref repoPath) t
             Nothing -> t
-
-toListWithId :: Map.HashMap k v -> [(k, v)]
-toListWithId = Map.toList
-
-toList :: Map.HashMap k v -> [v]
-toList = Map.elems

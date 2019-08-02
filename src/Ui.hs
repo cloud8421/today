@@ -8,6 +8,7 @@ module Ui
   , showError
   ) where
 
+import qualified Data.HashMap.Strict as Map
 import qualified Data.List as L
 import qualified Data.Sort as Sort
 import qualified Data.Text as T
@@ -66,7 +67,7 @@ showGroupBody :: Tasks -> RefMap -> Elapsed -> IO ()
 showGroupBody tasks refMap currentTime = mapM_ showTask orderedTasks
   where
     orderedTasks =
-      Sort.sortOn (\(id, task) -> -lastUpdate task) (toListWithId tasks)
+      Sort.sortOn (\(id, task) -> -lastUpdate task) (Map.toList tasks)
     showTask (id, task) = do
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr (T.pack (printf "%5d." id))
@@ -143,7 +144,7 @@ showText status text =
 
 showTaskGroups :: Taskfile.Taskfile -> Elapsed -> IO ()
 showTaskGroups taskfile currentTime =
-  mapM_ showTaskGroup (toListWithId taskGroups)
+  mapM_ showTaskGroup (Map.toList taskGroups)
   where
     taskGroups = groupByContext (Taskfile.tasks taskfile)
     showTaskGroup (context, groupTasks) = do
@@ -169,13 +170,13 @@ todayList tasks refMap = do
 showToday :: Taskfile.Taskfile -> IO ()
 showToday taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
-    todayTasks = L.filter started (toList (Taskfile.tasks taskfile))
+    todayTasks = L.filter started (Map.elems (Taskfile.tasks taskfile))
 
 showTodayByContext :: Context -> Taskfile.Taskfile -> IO ()
 showTodayByContext c taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
     taskForToday task = context task == c && started task
-    todayTasks = L.filter taskForToday (toList (Taskfile.tasks taskfile))
+    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
 
 showEmpty :: IO ()
 showEmpty = do
@@ -205,7 +206,7 @@ showRefs refMap =
       spacer
     _other -> do
       spacer
-      mapM_ showRef (toListWithId refMap)
+      mapM_ showRef (Map.toList refMap)
       spacer
   where
     showRef (repo, repoPath) = do
