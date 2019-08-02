@@ -14,11 +14,11 @@ module Tasks
   , groupByContext
   , toListWithId
   , toList
-  , addTask
-  , removeTask
-  , updateTaskContext
-  , updateTaskStatus
-  , updateTaskText
+  , add
+  , remove
+  , updateContext
+  , updateStatus
+  , updateText
   , age
   , started
   , refs
@@ -98,20 +98,20 @@ newTaskId tasks =
     [] -> 1
     keys -> Prelude.maximum keys + 1
 
-addTask :: Text -> Elapsed -> Context -> Tasks -> Tasks
-addTask text currentTime context tasks =
+add :: Text -> Elapsed -> Context -> Tasks -> Tasks
+add text currentTime context tasks =
   let taskId = newTaskId tasks
       task = Task Pending text currentTime context
    in Map.insert taskId task tasks
 
-removeTask :: Tasks -> TaskId -> Tasks
-removeTask tasks taskId = Map.delete taskId tasks
+remove :: Tasks -> TaskId -> Tasks
+remove tasks taskId = Map.delete taskId tasks
 
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateTaskStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateTaskStatus newStatus tasks taskId currentTime =
+updateStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateStatus newStatus tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
     Just task ->
@@ -121,8 +121,8 @@ updateTaskStatus newStatus tasks taskId currentTime =
            taskId
            tasks)
 
-updateTaskText :: Text -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateTaskText newText tasks taskId currentTime =
+updateText :: Text -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateText newText tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
     Just task ->
@@ -132,9 +132,8 @@ updateTaskText newText tasks taskId currentTime =
            taskId
            tasks)
 
-updateTaskContext ::
-     Context -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateTaskContext newContext tasks taskId currentTime =
+updateContext :: Context -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateContext newContext tasks taskId currentTime =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
     Just task ->

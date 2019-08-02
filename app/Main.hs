@@ -187,73 +187,50 @@ update ::
   -> Taskfile.Taskfile
   -> Either String Taskfile.Taskfile
 update sc currentTime taskfile =
-  case sc of
-    AddTask taskContext textFrags ->
-      Right (Taskfile.updateTasks taskfile newTasks)
-      where text = T.intercalate " " textFrags
-            newTasks =
-              Tasks.addTask
-                text
-                currentTime
-                taskContext
-                (Taskfile.tasks taskfile)
-    ListTasks -> Right taskfile
-    DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
-      where newTasks = Tasks.removeTask (Taskfile.tasks taskfile) taskId
-    CheckTask taskId ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskStatus
-           Tasks.Done
-           (Taskfile.tasks taskfile)
-           taskId
-           currentTime)
-    CancelTask taskId ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskStatus
-           Tasks.Cancelled
-           (Taskfile.tasks taskfile)
-           taskId
-           currentTime)
-    StartTask taskId ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskStatus
-           Tasks.Progress
-           (Taskfile.tasks taskfile)
-           taskId
-           currentTime)
-    PauseTask taskId ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskStatus
-           Tasks.Pending
-           (Taskfile.tasks taskfile)
-           taskId
-           currentTime)
-    Update taskId textFrags ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskText text (Taskfile.tasks taskfile) taskId currentTime)
-      where text = T.intercalate " " textFrags
-    Move taskId context ->
-      mapRight
-        (Taskfile.updateTasks taskfile)
-        (Tasks.updateTaskContext
-           context
-           (Taskfile.tasks taskfile)
-           taskId
-           currentTime)
-    Clear -> Right (Taskfile.updateTasks taskfile newTasks)
-      where newTasks = Tasks.clearCompleted (Taskfile.tasks taskfile)
-    Today -> Right taskfile
-    TodayByContext context -> Right taskfile
-    ListRefs -> Right taskfile
-    AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
-      where newRefs = Tasks.setRef repo repoPath (Taskfile.refs taskfile)
-    DeleteRef repo -> Right (Taskfile.updateRefs newRefs taskfile)
-      where newRefs = Tasks.removeRef repo (Taskfile.refs taskfile)
+  let currentTasks = Taskfile.tasks taskfile
+      currentRefs = Taskfile.refs taskfile
+   in case sc of
+        AddTask taskContext textFrags ->
+          Right (Taskfile.updateTasks taskfile newTasks)
+          where text = T.intercalate " " textFrags
+                newTasks = Tasks.add text currentTime taskContext currentTasks
+        ListTasks -> Right taskfile
+        DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
+          where newTasks = Tasks.remove currentTasks taskId
+        CheckTask taskId ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateStatus Tasks.Done currentTasks taskId currentTime)
+        CancelTask taskId ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateStatus Tasks.Cancelled currentTasks taskId currentTime)
+        StartTask taskId ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateStatus Tasks.Progress currentTasks taskId currentTime)
+        PauseTask taskId ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateStatus Tasks.Pending currentTasks taskId currentTime)
+        Update taskId textFrags ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateText text currentTasks taskId currentTime)
+          where text = T.intercalate " " textFrags
+        Move taskId context ->
+          mapRight
+            (Taskfile.updateTasks taskfile)
+            (Tasks.updateContext context currentTasks taskId currentTime)
+        Clear -> Right (Taskfile.updateTasks taskfile newTasks)
+          where newTasks = Tasks.clearCompleted currentTasks
+        Today -> Right taskfile
+        TodayByContext context -> Right taskfile
+        ListRefs -> Right taskfile
+        AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
+          where newRefs = Tasks.setRef repo repoPath currentRefs
+        DeleteRef repo -> Right (Taskfile.updateRefs newRefs taskfile)
+          where newRefs = Tasks.removeRef repo currentRefs
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
