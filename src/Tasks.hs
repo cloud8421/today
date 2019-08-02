@@ -103,7 +103,7 @@ defaultTasks currentTime =
   Map.fromList
     [ (1, Task Done "Install t" currentTime "inbox")
     , (2, Task Pending "Learn how to use t" currentTime "inbox")
-    , (3, Task Pending "Clean keyboard" currentTime "work")
+    , (3, Task Pending "Finally fix issue T#2345" currentTime "work")
     ]
 
 totalCount :: Map.HashMap k v -> Int

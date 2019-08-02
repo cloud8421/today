@@ -24,6 +24,9 @@ type RefMap = Map.HashMap Repo RepoPath
 emptyRefMap :: RefMap
 emptyRefMap = Map.empty
 
+defaultRefMap :: RefMap
+defaultRefMap = Map.fromList [("T", "cloud8421/t")]
+
 resolveRef :: Ref -> RefMap -> Text
 resolveRef ref refMap =
   case Map.lookup (repo ref) refMap of

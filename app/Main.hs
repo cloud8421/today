@@ -250,7 +250,7 @@ main = do
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure
     resolvedTaskFilePath
-    (Taskfile.new (Tasks.defaultTasks currentTime) Refs.emptyRefMap)
+    (Taskfile.new (Tasks.defaultTasks currentTime) Refs.defaultRefMap)
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.showError err
     Right taskfile ->
