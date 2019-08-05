@@ -38,8 +38,8 @@ data SubCommand
   | Clear
   | Today (Maybe Tasks.Context)
   | ListRefs
-  | AddRef Refs.Repo Refs.RepoPath
-  | DeleteRef Refs.Repo
+  | AddRef Refs.Service Refs.UrlTemplate
+  | DeleteRef Refs.Service
   deriving (Show)
 
 optsParser :: ParserInfo Opts

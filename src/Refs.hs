@@ -6,34 +6,38 @@ import Data.Aeson
 import qualified Data.HashMap.Strict as Map
 import Data.List as L
 import Data.Text as T
+import qualified Data.Text.Lazy as LZ
+import qualified Data.Text.Template as TPL
 import Text.Regex.PCRE
 
-type Repo = Text
+type Service = Text
 
-type RepoPath = Text
+type Identifier = Text
+
+type UrlTemplate = Text
 
 data Ref =
   Ref
-    { repo :: Repo
-    , issueNumber :: Text
+    { service :: Service
+    , identifier :: Identifier
     , matchedOn :: Text
     }
   deriving (Show, Eq)
 
-type RefMap = Map.HashMap Repo RepoPath
+type RefMap = Map.HashMap Service UrlTemplate
 
 emptyRefMap :: RefMap
 emptyRefMap = Map.empty
 
 defaultRefMap :: RefMap
-defaultRefMap = Map.fromList [("T", "cloud8421/t")]
+defaultRefMap =
+  Map.fromList [("T", "https://github.com/cloud8421/t/issues/$id")]
 
 resolveRef :: Ref -> RefMap -> Text
 resolveRef ref refMap =
-  case Map.lookup (repo ref) refMap of
-    Just repoPath -> buildRefUrl ref repoPath
-    Nothing -> T.unwords ["Cannot resolve", refString]
-      where refString = T.intercalate "#" [repo ref, issueNumber ref]
+  case Map.lookup (service ref) refMap of
+    Just urlTemplate -> buildRefUrl ref urlTemplate
+    Nothing -> T.unwords ["Cannot resolve", refId ref]
 
 extractRefs :: Text -> [Ref]
 extractRefs text = L.map builder matches
@@ -50,22 +54,24 @@ replaceRefs :: Text -> RefMap -> Text
 replaceRefs text refMap = L.foldl expandRef text (extractRefs text)
   where
     expandRef t ref =
-      case Map.lookup (repo ref) refMap of
-        Just repoPath -> replace (matchedOn ref) (buildRefUrl ref repoPath) t
+      case Map.lookup (service ref) refMap of
+        Just urlTemplate ->
+          replace (matchedOn ref) (buildRefUrl ref urlTemplate) t
         Nothing -> t
 
 refMatcher :: String
 refMatcher = "(\\w*#\\d+)"
 
-buildRefUrl :: Ref -> RepoPath -> Text
-buildRefUrl ref repoPath =
-  T.intercalate "/" ["https://github.com", repoPath, "issues", issueNumber ref]
+buildRefUrl :: Ref -> UrlTemplate -> Text
+buildRefUrl ref urlTemplate =
+  let context _id = identifier ref
+   in LZ.toStrict (TPL.substitute urlTemplate context)
 
 refId :: Ref -> Text
-refId ref = T.intercalate "#" [repo ref, issueNumber ref]
+refId ref = T.intercalate "#" [service ref, identifier ref]
 
-setRef :: Repo -> RepoPath -> RefMap -> RefMap
+setRef :: Service -> UrlTemplate -> RefMap -> RefMap
 setRef = Map.insert
 
-removeRef :: Repo -> RefMap -> RefMap
+removeRef :: Service -> RefMap -> RefMap
 removeRef = Map.delete
