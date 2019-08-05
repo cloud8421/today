@@ -141,14 +141,14 @@ showText status text =
       setSGR [SetColor Foreground Vivid Black]
       TIO.putStr text
 
-showTaskGroups :: Taskfile.Taskfile -> Elapsed -> IO ()
-showTaskGroups taskfile currentTime =
+showTaskGroups :: Tasks.Tasks -> RefMap -> Elapsed -> IO ()
+showTaskGroups tasks refs currentTime =
   mapM_ showTaskGroup (Map.toList taskGroups)
   where
-    taskGroups = groupByContext (Taskfile.tasks taskfile)
+    taskGroups = groupByContext tasks
     showTaskGroup (context, groupTasks) = do
       showGroupHeader context groupTasks
-      showGroupBody groupTasks (Taskfile.refs taskfile) currentTime
+      showGroupBody groupTasks refs currentTime
       spacer
 
 todayList :: [Task] -> RefMap -> IO ()
@@ -181,18 +181,22 @@ showEmpty = do
   spacer
   TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
 
-showTasks :: Taskfile.Taskfile -> Elapsed -> IO ()
-showTasks taskfile currentTime = do
+showTasks :: Maybe Context -> Taskfile.Taskfile -> Elapsed -> IO ()
+showTasks maybeContext taskfile currentTime = do
   spacer
   body
   spacer
   where
+    contextTasks =
+      case maybeContext of
+        Nothing -> Taskfile.tasks taskfile
+        Just c -> Tasks.forContext c (Taskfile.tasks taskfile)
     body =
-      case totalCount (Taskfile.tasks taskfile) of
+      case totalCount contextTasks of
         0 -> showEmpty
         other -> do
-          showTaskGroups taskfile currentTime
-          showStats (Taskfile.tasks taskfile)
+          showTaskGroups contextTasks (Taskfile.refs taskfile) currentTime
+          showStats contextTasks
 
 showRefs :: RefMap -> IO ()
 showRefs refMap =

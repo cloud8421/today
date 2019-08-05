@@ -98,6 +98,9 @@ age task currentTime = timeDiff currentTime (lastUpdate task)
 started :: Task -> Bool
 started task = status task `elem` [Pending, Progress]
 
+forContext :: Context -> Tasks -> Tasks
+forContext c = Map.filter (\t -> context t == c)
+
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
   Map.fromList

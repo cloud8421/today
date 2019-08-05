@@ -26,7 +26,7 @@ data Opts =
 
 data SubCommand
   = AddTask Text [Text]
-  | ListTasks
+  | ListTasks (Maybe Tasks.Context)
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
@@ -96,7 +96,9 @@ optsParser = info (helper <*> programOptions) description
         maybeContext = Right . Just . pack
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
-      command "list" (info (pure ListTasks) (progDesc "List current tasks"))
+      command "list" (info listTasksOptions (progDesc "List current tasks"))
+    listTasksOptions :: Parser SubCommand
+    listTasksOptions = ListTasks <$> maybeTaskContextOption
     addTaskCommand :: Mod CommandFields SubCommand
     addTaskCommand = command "add" (info addOptions (progDesc "add a new task"))
     addOptions :: Parser SubCommand
@@ -194,7 +196,7 @@ update sc currentTime taskfile =
           Right (Taskfile.updateTasks taskfile newTasks)
           where text = T.intercalate " " textFrags
                 newTasks = Tasks.add text currentTime taskContext currentTasks
-        ListTasks -> Right taskfile
+        ListTasks _context -> Right taskfile
         DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.remove currentTasks taskId
         CheckTask taskId ->
@@ -238,7 +240,8 @@ view sc currentTime taskfile =
     ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
     AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
     DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)
-    other -> Ui.showTasks taskfile currentTime
+    ListTasks maybeContext -> Ui.showTasks maybeContext taskfile currentTime
+    other -> Ui.showTasks Nothing taskfile currentTime
 
 main :: IO ()
 main = do
