@@ -27,7 +27,7 @@ Features:
 
 - Manage tasks and associate them to a specific context.
 - Tasks can be marked as cancelled and subsequently deleted.
-- Support shorthand references in the task description that get automatically expanded to Github links.
+- Support shorthand references in the task description that get automatically expanded according to URL templates.
 - A `today` command which outputs the list of pending/in-progress tasks to a format that can be pasted to Slack.
 - All data written to a single file, which can be put in Dropbox etc.
 
@@ -35,8 +35,8 @@ Features:
 
 1. You can start with `t list` to see the default content.
 2. Add a task with `t add "Email triage"`.
-3. Add a task in a specific context with `t add --context "Find a solution for issue T#2313"`. Note the `T#2313` reference.
-4. Add a reference rule for `T#2313`, so that it gets expanded automatically (only needed once per repo) `t set-ref T cloud8421/t`
+3. Add a task in a specific context with `t add --context "Find a solution for issue T#2313"`. Note the `T#2313` reference to service `T` with identifier `2313`, which identifies an issue with that number in this very repo.
+4. Add a reference rule for `T#2313`, so that it gets expanded automatically (only needed once per Taskfile) `t set-ref T "https://github.com/cloud8421/t/$id`. Always make sure that you add the `$id` fragment to signal where you want interpolation to happen.
 5. Run `t list` and see the expanded reference below the task.
 6. Run `t today` for a today message you can paste wherever you like (references are already expanded).
 7. Start a task: `t start 2`
@@ -45,6 +45,8 @@ Features:
 ## Command reference
 
 ```
+T - CLI Task Manager : Efficiently manage tasks from the command line
+
 Usage: t [-f|--taskfile TASKFILE] COMMAND
   T - CLI Task Manager
 

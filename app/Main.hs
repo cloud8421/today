@@ -159,8 +159,8 @@ optsParser = info (helper <*> programOptions) description
       command "set-ref" (info addRefOptions (progDesc Help.addRef))
     addRefOptions :: Parser SubCommand
     addRefOptions =
-      AddRef <$> textArgument (help Help.refRepo) <*>
-      textArgument (help Help.refPath)
+      AddRef <$> textArgument (help Help.refService) <*>
+      textArgument (help Help.refUrlTemplate)
     deleteRefCommand :: Mod CommandFields SubCommand
     deleteRefCommand =
       command "delete-ref" (info deleteRefOptions (progDesc Help.deleteRef))

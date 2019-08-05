@@ -31,7 +31,7 @@ addTask =
 
 taskText :: String
 taskText =
-  "The text of the task. Use double quotes for special characters. Can include references in the shape of REPONAME#ISSUE_NUMBER, e.g. T#123."
+  "The text of the task. Use double quotes for special characters. Can include references in the shape of SERVICE#IDENTIFIER, e.g. T#123."
 
 taskId :: String
 taskId = "The ID of the task the action should be applied on."
@@ -74,13 +74,13 @@ addRef = "Add a new ref replacement rule"
 deleteRef :: String
 deleteRef = "Delete an existing ref replacement rule by its repo."
 
-refRepo :: String
-refRepo =
-  "The ref name to use inside tasks. If set to CORE, allows resolving refs in the shape of CORE#<number> to any task description."
+refService :: String
+refService =
+  "The service name to use inside tasks. If set to CORE, allows resolving refs in the shape of CORE#<number> in any task description."
 
-refPath :: String
-refPath =
-  "The github path the ref points to. If set to cloud8421/t, it would point to https://github.com/cloud8421/t/issues."
+refUrlTemplate :: String
+refUrlTemplate =
+  "The url template to use when expanding a ref in a task description. Should contain the token '$id', which would be interpolated with the reference number."
 
 refRepoAction :: String
 refRepoAction = "The ref replacement rule repo the action should be applied on."
