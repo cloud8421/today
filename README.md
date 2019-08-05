@@ -1,5 +1,7 @@
 # T - CLI Task Manager
 
+[![CircleCI](https://circleci.com/gh/cloud8421/t.svg?style=svg&circle-token=b6247f7bf94460ff15e6b85ba4abbf19cfe62f70)](https://circleci.com/gh/cloud8421/t)
+
 Efficiently manage tasks from the command line.
 
 ```
