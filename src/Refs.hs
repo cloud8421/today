@@ -18,6 +18,7 @@ data Ref =
     , issueNumber :: Text
     , matchedOn :: Text
     }
+  deriving (Show, Eq)
 
 type RefMap = Map.HashMap Repo RepoPath
 
