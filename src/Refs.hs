@@ -3,11 +3,13 @@
 module Refs where
 
 import Data.Aeson
+import Data.Either.Combinators (mapRight)
 import qualified Data.HashMap.Strict as Map
 import Data.List as L
 import Data.Text as T
 import qualified Data.Text.Lazy as LZ
 import qualified Data.Text.Template as TPL
+import Text.Printf
 import Text.Regex.PCRE
 
 type Service = Text
@@ -70,8 +72,11 @@ buildRefUrl ref urlTemplate =
 refId :: Ref -> Text
 refId ref = T.intercalate "#" [service ref, identifier ref]
 
-setRef :: Service -> UrlTemplate -> RefMap -> RefMap
-setRef = Map.insert
+setRef :: Service -> UrlTemplate -> RefMap -> Either String RefMap
+setRef service urlTemplate refMap =
+  case TPL.templateSafe urlTemplate of
+    Right _template -> Right (Map.insert service urlTemplate refMap)
+    Left (row, col) -> Left (printf "Template error at position %d, %d" row col)
 
 removeRef :: Service -> RefMap -> RefMap
 removeRef = Map.delete

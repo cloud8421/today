@@ -212,9 +212,11 @@ update sc currentTime taskfile =
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> Right taskfile
         ListRefs -> Right taskfile
-        AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
-          where newRefs = Refs.setRef repo repoPath currentRefs
-        DeleteRef repo -> Right (Taskfile.updateRefs newRefs taskfile)
+        AddRef service urlTemplate ->
+          mapRight
+            (Taskfile.updateRefs taskfile)
+            (Refs.setRef service urlTemplate currentRefs)
+        DeleteRef repo -> Right (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()

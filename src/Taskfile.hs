@@ -46,5 +46,5 @@ resolveFromEnv fallback = fromMaybeM (return fallback) (lookupEnv "TASKFILE")
 updateTasks :: Taskfile -> Tasks -> Taskfile
 updateTasks taskfile newTasks = taskfile {tasks = newTasks}
 
-updateRefs :: RefMap -> Taskfile -> Taskfile
-updateRefs newRefMap taskfile = taskfile {refs = newRefMap}
+updateRefs :: Taskfile -> RefMap -> Taskfile
+updateRefs taskfile newRefMap = taskfile {refs = newRefMap}
