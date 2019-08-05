@@ -22,6 +22,7 @@ data Opts =
     { taskFilePath :: FilePath
     , subCommand :: SubCommand
     }
+  deriving (Show)
 
 data SubCommand
   = AddTask Text [Text]
@@ -34,11 +35,11 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
-  | Today
-  | TodayByContext Text
+  | Today (Maybe Tasks.Context)
   | ListRefs
   | AddRef Refs.Repo Refs.RepoPath
   | DeleteRef Refs.Repo
+  deriving (Show)
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -64,8 +65,7 @@ optsParser = info (helper <*> programOptions) description
       moveTaskCommand <>
       clearCommand
     reporterCommands :: Mod CommandFields SubCommand
-    reporterCommands =
-      commandGroup "Reporters:" <> todayCommand <> todayByContextCommand
+    reporterCommands = commandGroup "Reporters:" <> todayCommand
     refManagementCommands :: Mod CommandFields SubCommand
     refManagementCommands =
       commandGroup "Refs management:" <> listRefsCommand <> addRefCommand <>
@@ -86,6 +86,14 @@ optsParser = info (helper <*> programOptions) description
       textOption
         (long "context" <> short 'c' <> value Tasks.defaultContext <>
          help "The content for the task, e.g. work or home")
+    maybeTaskContextOption :: Parser (Maybe Text)
+    maybeTaskContextOption =
+      option
+        (eitherReader maybeContext)
+        (long "context" <> short 'c' <> value Nothing <>
+         help "The content for the task, e.g. work or home")
+      where
+        maybeContext = Right . Just . pack
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info (pure ListTasks) (progDesc "List current tasks"))
@@ -147,18 +155,9 @@ optsParser = info (helper <*> programOptions) description
         (info (pure Clear) (progDesc "Clears done and cancelled tasks"))
     todayCommand :: Mod CommandFields SubCommand
     todayCommand =
-      command "today" (info (pure Today) (progDesc "Generate a today summary"))
-    todayByContextCommand :: Mod CommandFields SubCommand
-    todayByContextCommand =
-      command
-        "today_by_context"
-        (info
-           todayByContextOptions
-           (progDesc "Generate a today summary for the given context"))
-    todayByContextOptions :: Parser SubCommand
-    todayByContextOptions =
-      TodayByContext <$>
-      textArgument (help "The context to generate the today message for")
+      command "today" (info todayOptions (progDesc "Generate a today summary"))
+    todayOptions :: Parser SubCommand
+    todayOptions = Today <$> maybeTaskContextOption
     listRefsCommand :: Mod CommandFields SubCommand
     listRefsCommand =
       command
@@ -225,8 +224,7 @@ update sc currentTime taskfile =
             (Tasks.updateContext context currentTasks taskId currentTime)
         Clear -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
-        Today -> Right taskfile
-        TodayByContext context -> Right taskfile
+        Today _maybeContext -> Right taskfile
         ListRefs -> Right taskfile
         AddRef repo repoPath -> Right (Taskfile.updateRefs newRefs taskfile)
           where newRefs = Refs.setRef repo repoPath currentRefs
@@ -236,8 +234,7 @@ update sc currentTime taskfile =
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
   case sc of
-    Today -> Ui.showToday taskfile
-    TodayByContext context -> Ui.showTodayByContext context taskfile
+    Today maybeContext -> Ui.showToday maybeContext taskfile
     ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
     AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
     DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)

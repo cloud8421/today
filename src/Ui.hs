@@ -3,7 +3,6 @@
 module Ui
   ( showTasks
   , showToday
-  , showTodayByContext
   , showRefs
   , showError
   ) where
@@ -167,13 +166,11 @@ todayList tasks refMap = do
       TIO.putStr "• "
       TIO.putStrLn (replaceRefs (text task) refMap)
 
-showToday :: Taskfile.Taskfile -> IO ()
-showToday taskfile = todayList todayTasks (Taskfile.refs taskfile)
+showToday :: Maybe Context -> Taskfile.Taskfile -> IO ()
+showToday Nothing taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
     todayTasks = L.filter started (Map.elems (Taskfile.tasks taskfile))
-
-showTodayByContext :: Context -> Taskfile.Taskfile -> IO ()
-showTodayByContext c taskfile = todayList todayTasks (Taskfile.refs taskfile)
+showToday (Just c) taskfile = todayList todayTasks (Taskfile.refs taskfile)
   where
     taskForToday task = context task == c && started task
     todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
