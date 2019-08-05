@@ -9,6 +9,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Either.Combinators (mapRight)
 import Data.Semigroup ((<>))
 import Data.Text as T
+import qualified Help
 import Options.Applicative
 import qualified Refs
 import System.Hourglass (timeCurrent)
@@ -45,9 +46,7 @@ optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
   where
     description :: InfoMod Opts
-    description =
-      fullDesc <> progDesc "T - CLI task manager" <>
-      header "T - CLI task manager"
+    description = fullDesc <> progDesc Help.progDesc <> header Help.progHeader
     programOptions :: Parser Opts
     programOptions =
       Opts <$> taskFilePathOption <*>
@@ -65,10 +64,11 @@ optsParser = info (helper <*> programOptions) description
       moveTaskCommand <>
       clearCommand
     reporterCommands :: Mod CommandFields SubCommand
-    reporterCommands = commandGroup "Reporters:" <> todayCommand
+    reporterCommands = commandGroup "Reporters:" <> hidden <> todayCommand
     refManagementCommands :: Mod CommandFields SubCommand
     refManagementCommands =
-      commandGroup "Refs management:" <> listRefsCommand <> addRefCommand <>
+      commandGroup "Refs management:" <> hidden <> listRefsCommand <>
+      addRefCommand <>
       deleteRefCommand
     textArgument :: Mod ArgumentFields String -> Parser Text
     textArgument = fmap pack . strArgument
@@ -84,105 +84,88 @@ optsParser = info (helper <*> programOptions) description
         (long "taskfile" <> short 'f' <> metavar "TASKFILE" <>
          value Taskfile.defaultPath <>
          showDefault <>
-         help "Which taskfile to use")
+         help Help.taskfile)
     taskContextOption :: Parser Text
     taskContextOption =
       textOption
         (long "context" <> short 'c' <> value Tasks.defaultContext <>
-         help "The content for the task, e.g. work or home")
+         help Help.contextFilter)
     maybeTaskContextOption :: Parser (Maybe Text)
     maybeTaskContextOption =
       maybeTextOption
         (long "context" <> short 'c' <> value Nothing <>
-         help "The content for the task, e.g. work or home")
+         help Help.maybeContextFilter)
+    taskIdArgument :: Parser Int
+    taskIdArgument = argument auto (help Help.taskId)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
-      command "list" (info listTasksOptions (progDesc "List current tasks"))
+      command "list" (info listTasksOptions (progDesc Help.listTasks))
     listTasksOptions :: Parser SubCommand
     listTasksOptions = ListTasks <$> maybeTaskContextOption
     addTaskCommand :: Mod CommandFields SubCommand
-    addTaskCommand = command "add" (info addOptions (progDesc "add a new task"))
+    addTaskCommand = command "add" (info addOptions (progDesc Help.addTask))
     addOptions :: Parser SubCommand
     addOptions =
-      AddTask <$> taskContextOption <*>
-      many (textArgument (help "Text of the new task"))
+      AddTask <$> taskContextOption <*> many (textArgument (help Help.taskText))
     deleteTaskCommand :: Mod CommandFields SubCommand
     deleteTaskCommand =
-      command "delete" (info deleteOptions (progDesc "Delete an existing task"))
+      command "delete" (info deleteOptions (progDesc Help.deleteTask))
     deleteOptions :: Parser SubCommand
-    deleteOptions =
-      DeleteTask <$> argument auto (help "ID of the task to delete")
+    deleteOptions = DeleteTask <$> taskIdArgument
     checkTaskCommand :: Mod CommandFields SubCommand
     checkTaskCommand =
-      command "check" (info checkOptions (progDesc "Check an existing task"))
+      command "check" (info checkOptions (progDesc Help.checkTask))
     checkOptions :: Parser SubCommand
-    checkOptions = CheckTask <$> argument auto (help "ID of the task to check")
+    checkOptions = CheckTask <$> taskIdArgument
     cancelTaskCommand :: Mod CommandFields SubCommand
     cancelTaskCommand =
-      command "cancel" (info cancelOptions (progDesc "Cancel an existing task"))
+      command "cancel" (info cancelOptions (progDesc Help.cancelTask))
     cancelOptions :: Parser SubCommand
-    cancelOptions =
-      CancelTask <$> argument auto (help "ID of the task to cancel")
+    cancelOptions = CancelTask <$> taskIdArgument
     startTaskCommand :: Mod CommandFields SubCommand
     startTaskCommand =
-      command "start" (info startOptions (progDesc "Start an existing task"))
+      command "start" (info startOptions (progDesc Help.startTask))
     startOptions :: Parser SubCommand
-    startOptions = StartTask <$> argument auto (help "ID of the task to start")
+    startOptions = StartTask <$> taskIdArgument
     pauseTaskCommand :: Mod CommandFields SubCommand
     pauseTaskCommand =
-      command "pause" (info pauseOptions (progDesc "Pauses an existing task"))
+      command "pause" (info pauseOptions (progDesc Help.pauseTask))
     pauseOptions :: Parser SubCommand
-    pauseOptions = PauseTask <$> argument auto (help "ID of the task to start")
+    pauseOptions = PauseTask <$> taskIdArgument
     updateTaskTextCommand :: Mod CommandFields SubCommand
     updateTaskTextCommand =
-      command
-        "update"
-        (info updateTextOptions (progDesc "updates an existing task text"))
+      command "update" (info updateTextOptions (progDesc Help.updateTask))
     updateTextOptions :: Parser SubCommand
     updateTextOptions =
-      Update <$> argument auto (help "ID of the task to update") <*>
-      many (textArgument (help "Text of the task"))
+      Update <$> taskIdArgument <*> many (textArgument (help Help.taskText))
     moveTaskCommand :: Mod CommandFields SubCommand
     moveTaskCommand =
-      command
-        "move"
-        (info moveTaskOptions (progDesc "moves a task to a different context"))
+      command "move" (info moveTaskOptions (progDesc Help.moveTask))
     moveTaskOptions :: Parser SubCommand
     moveTaskOptions =
-      Move <$> argument auto (help "ID of the task to update") <*>
-      textArgument (help "Context of the task")
+      Move <$> taskIdArgument <*> textArgument (help Help.contextMove)
     clearCommand :: Mod CommandFields SubCommand
     clearCommand =
-      command
-        "clear"
-        (info (pure Clear) (progDesc "Clears done and cancelled tasks"))
+      command "clear" (info (pure Clear) (progDesc Help.clearTasks))
     todayCommand :: Mod CommandFields SubCommand
-    todayCommand =
-      command "today" (info todayOptions (progDesc "Generate a today summary"))
+    todayCommand = command "today" (info todayOptions (progDesc Help.today))
     todayOptions :: Parser SubCommand
     todayOptions = Today <$> maybeTaskContextOption
     listRefsCommand :: Mod CommandFields SubCommand
     listRefsCommand =
-      command
-        "list_refs"
-        (info (pure ListRefs) (progDesc "Show currently configured ref lookups"))
+      command "refs" (info (pure ListRefs) (progDesc Help.listRefs))
     addRefCommand :: Mod CommandFields SubCommand
     addRefCommand =
-      command
-        "add_ref"
-        (info addRefOptions (progDesc "add a new ref lookup rule"))
+      command "set-ref" (info addRefOptions (progDesc Help.addRef))
     addRefOptions :: Parser SubCommand
     addRefOptions =
-      AddRef <$> textArgument (help "The repo name to use") <*>
-      textArgument (help "The github path the repo points to")
+      AddRef <$> textArgument (help Help.refRepo) <*>
+      textArgument (help Help.refPath)
     deleteRefCommand :: Mod CommandFields SubCommand
     deleteRefCommand =
-      command
-        "delete_ref"
-        (info deleteRefOptions (progDesc "add a new ref lookup rule"))
+      command "delete-ref" (info deleteRefOptions (progDesc Help.deleteRef))
     deleteRefOptions :: Parser SubCommand
-    deleteRefOptions =
-      DeleteRef <$> textArgument (help "The repo name to delete")
+    deleteRefOptions = DeleteRef <$> textArgument (help Help.refRepoAction)
 
 update ::
      SubCommand
