@@ -74,6 +74,10 @@ optsParser = info (helper <*> programOptions) description
     textArgument = fmap pack . strArgument
     textOption :: Mod OptionFields String -> Parser Text
     textOption = fmap pack . strOption
+    maybeTextOption :: Mod OptionFields (Maybe Text) -> Parser (Maybe Text)
+    maybeTextOption = option maybeText
+      where
+        maybeText = eitherReader (Right . Just . pack)
     taskFilePathOption :: Parser FilePath
     taskFilePathOption =
       strOption
@@ -88,12 +92,9 @@ optsParser = info (helper <*> programOptions) description
          help "The content for the task, e.g. work or home")
     maybeTaskContextOption :: Parser (Maybe Text)
     maybeTaskContextOption =
-      option
-        (eitherReader maybeContext)
+      maybeTextOption
         (long "context" <> short 'c' <> value Nothing <>
          help "The content for the task, e.g. work or home")
-      where
-        maybeContext = Right . Just . pack
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info listTasksOptions (progDesc "List current tasks"))
