@@ -1,5 +1,7 @@
 # T - CLI Task Manager : Efficiently manage tasks from the command line
 
+## Usage
+
 ```
 Usage: t [-f|--taskfile TASKFILE] COMMAND
   T - CLI Task Manager
@@ -37,3 +39,13 @@ Refs management:
   set-ref                  Add a new ref replacement rule
   delete-ref               Delete an existing ref replacement rule by its repo.
 ```
+
+## Development
+
+T is written in Haskell and requires [stack](https://www.haskellstack.org).
+
+It supports all standard `stack` commands, e.g. `test`, `run`, `build` or `install`.
+
+After cloning the repo, you can run `stack run -- list`, which will create an
+example `tasks.json` file in the project directory and display all current
+tasks.
