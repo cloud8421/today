@@ -1,6 +1,42 @@
 # T - CLI Task Manager : Efficiently manage tasks from the command line
 
+```
+  @inbox [1/2]
+    1. ✔  Install t 2d
+    2. ◻  Learn how to use t 2d
+
+  @work [0/1]
+    3. ◻  Finally fix issue T#2345 2d
+          | T#2345: https://github.com/cloud8421/t/issues/2345
+
+  33% of all tasks complete.
+  1 done · 0 in progress · 2 pending · 0 cancelled
+```
+
 ## Usage
+
+T is a command line task manager that heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
+
+Features:
+
+- Manage tasks and associate them to a specific context.
+- Tasks can be marked as cancelled and subsequently deleted.
+- Support shorthand references in the task description that get automatically expanded to Github links.
+- A `today` command which outputs the list of pending/in-progress tasks to a format that can be pasted to Slack.
+- All data written to a single file, which can be put in Dropbox etc.
+
+## Example flow
+
+1. You can start with `t list` to see the default content.
+2. Add a task with `t add "Email triage"`.
+3. Add a task in a specific context with `t add --context "Find a solution for issue T#2313"`. Note the `T#2313` reference.
+4. Add a reference rule for `T#2313`, so that it gets expanded automatically (only needed once per repo) `t set-ref T cloud8421/t`
+5. Run `t list` and see the expanded reference below the task.
+6. Run `t today` for a today message you can paste wherever you like (references are already expanded).
+7. Start a task: `t start 2`
+8. Finish a task: `t check 2`
+
+## Command reference
 
 ```
 Usage: t [-f|--taskfile TASKFILE] COMMAND
