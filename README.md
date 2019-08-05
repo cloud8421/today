@@ -1,4 +1,6 @@
-# T - CLI Task Manager : Efficiently manage tasks from the command line
+# T - CLI Task Manager
+
+Efficiently manage tasks from the command line.
 
 ```
   @inbox [1/2]
@@ -12,6 +14,8 @@
   33% of all tasks complete.
   1 done · 0 in progress · 2 pending · 0 cancelled
 ```
+
+![tasklist](/screenshots/list.png)
 
 ## Usage
 
