@@ -59,38 +59,29 @@ remove = flip Map.delete
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateStatus newStatus tasks taskId currentTime =
+updateTask :: (Task -> Task) -> TaskId -> Tasks -> Either String Tasks
+updateTask updateFn taskId tasks =
   case Map.lookup taskId tasks of
     Nothing -> Left "Task not found"
-    Just task ->
-      Right
-        (Map.adjust
-           (\t -> t {status = newStatus, lastUpdate = currentTime})
-           taskId
-           tasks)
+    Just task -> Right (Map.adjust updateFn taskId tasks)
+
+updateStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
+updateStatus newStatus tasks taskId currentTime =
+  updateTask
+    (\t -> t {status = newStatus, lastUpdate = currentTime})
+    taskId
+    tasks
 
 updateText :: Text -> Tasks -> TaskId -> Elapsed -> Either String Tasks
 updateText newText tasks taskId currentTime =
-  case Map.lookup taskId tasks of
-    Nothing -> Left "Task not found"
-    Just task ->
-      Right
-        (Map.adjust
-           (\t -> t {text = newText, lastUpdate = currentTime})
-           taskId
-           tasks)
+  updateTask (\t -> t {text = newText, lastUpdate = currentTime}) taskId tasks
 
 updateContext :: Context -> Tasks -> TaskId -> Elapsed -> Either String Tasks
 updateContext newContext tasks taskId currentTime =
-  case Map.lookup taskId tasks of
-    Nothing -> Left "Task not found"
-    Just task ->
-      Right
-        (Map.adjust
-           (\t -> t {context = newContext, lastUpdate = currentTime})
-           taskId
-           tasks)
+  updateTask
+    (\t -> t {context = newContext, lastUpdate = currentTime})
+    taskId
+    tasks
 
 age :: Task -> Elapsed -> Seconds
 age task currentTime = timeDiff currentTime (lastUpdate task)
