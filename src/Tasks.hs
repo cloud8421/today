@@ -54,7 +54,7 @@ add text currentTime context tasks =
    in Map.insert taskId task tasks
 
 remove :: Tasks -> TaskId -> Tasks
-remove tasks taskId = Map.delete taskId tasks
+remove = flip Map.delete
 
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
