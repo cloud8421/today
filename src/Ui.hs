@@ -151,6 +151,12 @@ showTaskGroups tasks refs currentTime =
       showGroupBody groupTasks refs currentTime
       spacer
 
+statusLabel :: Status -> T.Text
+statusLabel Pending = ":hourglass:"
+statusLabel Progress = ":spinner:"
+statusLabel Done = ":white_check_mark:"
+statusLabel Cancelled = ":x:"
+
 todayList :: [Task] -> RefMap -> IO ()
 todayList [] refMap = do
   spacer
@@ -164,6 +170,8 @@ todayList tasks refMap = do
   where
     taskLine task = do
       TIO.putStr "• "
+      TIO.putStr (statusLabel (status task))
+      TIO.putStr " "
       TIO.putStrLn (replaceRefs (text task) refMap)
 
 showToday :: Maybe Context -> Taskfile.Taskfile -> IO ()
