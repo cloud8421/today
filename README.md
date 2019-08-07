@@ -41,6 +41,8 @@ Features:
 6. Run `t today` for a today message you can paste wherever you like (references are already expanded).
 7. Start a task: `t start 2`
 8. Finish a task: `t check 2`
+9. Rinse and repeat. At the end of the day, run `t out-for-today` for a end of the day message you can paste again wherever you like.
+10. Run `t clear` to remove all done and cancelled tasks.
 
 ## Command reference
 
@@ -77,6 +79,10 @@ Reporters:
                            pending and in progress tasks. Optionally takes a
                            context option (--context or -c) to filter tasks by
                            that context.
+  out-for-today            Generate a out for today message summary, including
+                           all in progress, done and cancelled tasks. Optionally
+                           takes a context option (--context or -c) to filter
+                           tasks by that context.
 
 Refs management:
   refs                     List all configured ref replacement rules.
