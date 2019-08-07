@@ -37,6 +37,7 @@ data SubCommand
   | Move Tasks.TaskId Tasks.Context
   | Clear
   | Today (Maybe Tasks.Context)
+  | OutForToday (Maybe Tasks.Context)
   | ListRefs
   | AddRef Refs.Service Refs.UrlTemplate
   | DeleteRef Refs.Service
@@ -64,7 +65,8 @@ optsParser = info (helper <*> programOptions) description
       moveTaskCommand <>
       clearCommand
     reporterCommands :: Mod CommandFields SubCommand
-    reporterCommands = commandGroup "Reporters:" <> hidden <> todayCommand
+    reporterCommands =
+      commandGroup "Reporters:" <> hidden <> todayCommand <> outForTodayCommand
     refManagementCommands :: Mod CommandFields SubCommand
     refManagementCommands =
       commandGroup "Refs management:" <> hidden <> listRefsCommand <>
@@ -151,6 +153,13 @@ optsParser = info (helper <*> programOptions) description
     todayCommand = command "today" (info todayOptions (progDesc Help.today))
     todayOptions :: Parser SubCommand
     todayOptions = Today <$> maybeTaskContextOption
+    outForTodayCommand :: Mod CommandFields SubCommand
+    outForTodayCommand =
+      command
+        "out-for-today"
+        (info outForTodayOptions (progDesc Help.outForToday))
+    outForTodayOptions :: Parser SubCommand
+    outForTodayOptions = OutForToday <$> maybeTaskContextOption
     listRefsCommand :: Mod CommandFields SubCommand
     listRefsCommand =
       command "refs" (info (pure ListRefs) (progDesc Help.listRefs))
@@ -211,6 +220,7 @@ update sc currentTime taskfile =
         Clear -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> Right taskfile
+        OutForToday _maybeContext -> Right taskfile
         ListRefs -> Right taskfile
         AddRef service urlTemplate ->
           mapRight
@@ -223,6 +233,7 @@ view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
   case sc of
     Today maybeContext -> Ui.showToday maybeContext taskfile
+    OutForToday maybeContext -> Ui.showOutForToday maybeContext taskfile
     ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
     AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
     DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)

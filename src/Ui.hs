@@ -2,6 +2,7 @@
 
 module Ui
   ( showTasks
+  , showOutForToday
   , showToday
   , showRefs
   , showError
@@ -157,14 +158,14 @@ statusLabel Progress = ":spinner:"
 statusLabel Done = ":white_check_mark:"
 statusLabel Cancelled = ":x:"
 
-todayList :: [Task] -> RefMap -> IO ()
-todayList [] refMap = do
+todayList :: [Task] -> RefMap -> T.Text -> IO ()
+todayList [] refMap title = do
   spacer
   TIO.putStrLn (padLeft "No tasks available")
   spacer
-todayList tasks refMap = do
+todayList tasks refMap title = do
   spacer
-  TIO.putStrLn "*Today:*"
+  TIO.putStrLn title
   mapM_ taskLine tasks
   spacer
   where
@@ -174,13 +175,26 @@ todayList tasks refMap = do
       TIO.putStr " "
       TIO.putStrLn (replaceRefs (text task) refMap)
 
-showToday :: Maybe Context -> Taskfile.Taskfile -> IO ()
-showToday Nothing taskfile = todayList todayTasks (Taskfile.refs taskfile)
+showOutForToday :: Maybe Context -> Taskfile.Taskfile -> IO ()
+showOutForToday Nothing taskfile =
+  todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
   where
     todayTasks = L.filter started (Map.elems (Taskfile.tasks taskfile))
-showToday (Just c) taskfile = todayList todayTasks (Taskfile.refs taskfile)
+showOutForToday (Just c) taskfile =
+  todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
   where
     taskForToday task = context task == c && started task
+    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
+
+showToday :: Maybe Context -> Taskfile.Taskfile -> IO ()
+showToday Nothing taskfile =
+  todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
+  where
+    todayTasks = L.filter takenOver (Map.elems (Taskfile.tasks taskfile))
+showToday (Just c) taskfile =
+  todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
+  where
+    taskForToday task = context task == c && takenOver task
     todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
 
 showEmpty :: IO ()

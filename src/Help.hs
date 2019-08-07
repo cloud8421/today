@@ -65,6 +65,10 @@ today :: String
 today =
   "Generate a today message summary, including all pending and in progress tasks. Optionally takes a context option (--context or -c) to filter tasks by that context."
 
+outForToday :: String
+outForToday =
+  "Generate a out for today message summary, including all in progress, done and cancelled tasks. Optionally takes a context option (--context or -c) to filter tasks by that context."
+
 listRefs :: String
 listRefs = "List all configured ref replacement rules."
 
