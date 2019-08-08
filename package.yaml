@@ -36,6 +36,13 @@ dependencies:
 - time
 - unordered-containers
 
+ghc-options:
+- -Wall
+- -Wcompat
+- -Wincomplete-uni-patterns
+- -Wincomplete-record-updates
+- -Wredundant-constraints
+
 library:
   source-dirs: src
 
