@@ -105,9 +105,10 @@ inContext (Exclude c) task = context task /= c
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
   Map.fromList
-    [ (1, Task Done "Install t" currentTime "inbox")
-    , (2, Task Pending "Learn how to use t" currentTime "inbox")
-    , (3, Task Pending "Finally fix issue T#2345" currentTime "work")
+  $ zip [1..]
+    [ Task Done "Install t" currentTime "inbox"
+    , Task Pending "Learn how to use t" currentTime "inbox"
+    , Task Pending "Finally fix issue T#2345" currentTime "work"
     ]
 
 totalCount :: Map.HashMap k v -> Int
