@@ -95,6 +95,9 @@ takenOver task = status task `elem` [Pending, Progress]
 forContext :: Context -> Tasks -> Tasks
 forContext c = Map.filter (\t -> context t == c)
 
+exceptContext :: Context -> Tasks -> Tasks
+exceptContext c = Map.filter (\t -> context t /= c)
+
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
   Map.fromList

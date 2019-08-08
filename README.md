@@ -59,8 +59,8 @@ Available options:
                            over the option. (default: "./tasks.json")
 
 Task management:
-  list                     List all tasks. Optionally takes a context option
-                           (--context or -c) to filter tasks by that context.
+  list                     List all tasks. Can filter by context with
+                           --include-context/-i or --exclude-context/-e).
   add                      Add a new task. Requires a text description and
                            optionally takes a context option (--context or -c)
                            to add the task under that context.
@@ -76,13 +76,12 @@ Task management:
 
 Reporters:
   today                    Generate a today message summary, including all
-                           pending and in progress tasks. Optionally takes a
-                           context option (--context or -c) to filter tasks by
-                           that context.
+                           pending and in progress tasks. Can filter by context
+                           with --include-context/-i or --exclude-context/-e).
   out-for-today            Generate a out for today message summary, including
-                           all in progress, done and cancelled tasks. Optionally
-                           takes a context option (--context or -c) to filter
-                           tasks by that context.
+                           all in progress, done and cancelled tasks. Can filter
+                           by context with --include-context/-i or
+                           --exclude-context/-e).
 
 Refs management:
   refs                     List all configured ref replacement rules.

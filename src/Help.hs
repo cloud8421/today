@@ -17,13 +17,17 @@ contextFilter = "The context for the task to filter on, e.g. work or home."
 contextMove :: String
 contextMove = "The context the task should be moved to, e.g. work or home."
 
-maybeContextFilter :: String
-maybeContextFilter =
-  "The context for the task to filter on, e.g. work or home. If not provided, it will default to all tasks."
+includeContextFilter :: String
+includeContextFilter =
+  "Which context to include, e.g. work or home. If not provided, it will default to all tasks."
+
+excludeContextFilter :: String
+excludeContextFilter =
+  "Which context to exclude, e.g. work or home. If not provided, it will default to all tasks."
 
 listTasks :: String
 listTasks =
-  "List all tasks. Optionally takes a context option (--context or -c) to filter tasks by that context."
+  "List all tasks. Can filter by context with --include-context/-i or --exclude-context/-e)."
 
 addTask :: String
 addTask =
@@ -63,11 +67,11 @@ clearTasks =
 
 today :: String
 today =
-  "Generate a today message summary, including all pending and in progress tasks. Optionally takes a context option (--context or -c) to filter tasks by that context."
+  "Generate a today message summary, including all pending and in progress tasks. Can filter by context with --include-context/-i or --exclude-context/-e)."
 
 outForToday :: String
 outForToday =
-  "Generate a out for today message summary, including all in progress, done and cancelled tasks. Optionally takes a context option (--context or -c) to filter tasks by that context."
+  "Generate a out for today message summary, including all in progress, done and cancelled tasks. Can filter by context with --include-context/-i or --exclude-context/-e)."
 
 listRefs :: String
 listRefs = "List all configured ref replacement rules."

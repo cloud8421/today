@@ -23,11 +23,10 @@ data Opts =
     { taskFilePath :: FilePath
     , subCommand :: SubCommand
     }
-  deriving (Show)
 
 data SubCommand
   = AddTask Text [Text]
-  | ListTasks (Maybe Tasks.Context)
+  | ListTasks Ui.ContextFilter
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
@@ -36,12 +35,11 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
-  | Today (Maybe Tasks.Context)
-  | OutForToday (Maybe Tasks.Context)
+  | Today Ui.ContextFilter
+  | OutForToday Ui.ContextFilter
   | ListRefs
   | AddRef Refs.Service Refs.UrlTemplate
   | DeleteRef Refs.Service
-  deriving (Show)
 
 optsParser :: ParserInfo Opts
 optsParser = info (helper <*> programOptions) description
@@ -92,18 +90,29 @@ optsParser = info (helper <*> programOptions) description
       textOption
         (long "context" <> short 'c' <> value Tasks.defaultContext <>
          help Help.contextFilter)
-    maybeTaskContextOption :: Parser (Maybe Text)
-    maybeTaskContextOption =
-      maybeTextOption
-        (long "context" <> short 'c' <> value Nothing <>
-         help Help.maybeContextFilter)
+    contextFilterOption :: Parser Ui.ContextFilter
+    contextFilterOption =
+      includeContextFilterOption <|> excludeContextFilterOption
+      where
+        includeContextFilterOption =
+          option
+            includeReader
+            (long "include-context" <> short 'i' <> value Ui.All <>
+             help Help.includeContextFilter)
+        includeReader = eitherReader (Right . Ui.Include . pack)
+        excludeContextFilterOption =
+          option
+            excludeReader
+            (long "exclude-context" <> short 'e' <> value Ui.All <>
+             help Help.excludeContextFilter)
+        excludeReader = eitherReader (Right . Ui.Exclude . pack)
     taskIdArgument :: Parser Int
     taskIdArgument = argument auto (help Help.taskId)
     listTasksCommand :: Mod CommandFields SubCommand
     listTasksCommand =
       command "list" (info listTasksOptions (progDesc Help.listTasks))
     listTasksOptions :: Parser SubCommand
-    listTasksOptions = ListTasks <$> maybeTaskContextOption
+    listTasksOptions = ListTasks <$> contextFilterOption
     addTaskCommand :: Mod CommandFields SubCommand
     addTaskCommand = command "add" (info addOptions (progDesc Help.addTask))
     addOptions :: Parser SubCommand
@@ -152,14 +161,14 @@ optsParser = info (helper <*> programOptions) description
     todayCommand :: Mod CommandFields SubCommand
     todayCommand = command "today" (info todayOptions (progDesc Help.today))
     todayOptions :: Parser SubCommand
-    todayOptions = Today <$> maybeTaskContextOption
+    todayOptions = Today <$> contextFilterOption
     outForTodayCommand :: Mod CommandFields SubCommand
     outForTodayCommand =
       command
         "out-for-today"
         (info outForTodayOptions (progDesc Help.outForToday))
     outForTodayOptions :: Parser SubCommand
-    outForTodayOptions = OutForToday <$> maybeTaskContextOption
+    outForTodayOptions = OutForToday <$> contextFilterOption
     listRefsCommand :: Mod CommandFields SubCommand
     listRefsCommand =
       command "refs" (info (pure ListRefs) (progDesc Help.listRefs))
@@ -232,13 +241,13 @@ update sc currentTime taskfile =
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
 view sc currentTime taskfile =
   case sc of
-    Today maybeContext -> Ui.showToday maybeContext taskfile
-    OutForToday maybeContext -> Ui.showOutForToday maybeContext taskfile
+    Today contextFilter -> Ui.showToday contextFilter taskfile
+    OutForToday contextFilter -> Ui.showOutForToday contextFilter taskfile
     ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
     AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
     DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)
-    ListTasks maybeContext -> Ui.showTasks maybeContext taskfile currentTime
-    other -> Ui.showTasks Nothing taskfile currentTime
+    ListTasks contextFilter -> Ui.showTasks contextFilter taskfile currentTime
+    other -> Ui.showTasks Ui.All taskfile currentTime
 
 executeCommand :: IO ()
 executeCommand = do
