@@ -21,11 +21,6 @@ import Tasks
 import Text.Printf
 import Time.Types (Elapsed, Seconds)
 
-data ContextFilter
-  = All
-  | Include Tasks.Context
-  | Exclude Tasks.Context
-
 spacer :: IO ()
 spacer = TIO.putStrLn ""
 
@@ -182,36 +177,18 @@ todayList tasks refMap title = do
       TIO.putStrLn (replaceRefs (text task) refMap)
 
 showOutForToday :: ContextFilter -> Taskfile.Taskfile -> IO ()
-showOutForToday All taskfile =
+showOutForToday contextFilter taskfile =
   todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
   where
-    todayTasks = L.filter started (Map.elems (Taskfile.tasks taskfile))
-showOutForToday (Include c) taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
-  where
-    taskForToday task = context task == c && started task
-    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
-showOutForToday (Exclude c) taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
-  where
-    taskForToday task = context task /= c && started task
-    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
+    todayTask t = started t && inContext contextFilter t
+    todayTasks = L.filter todayTask (Map.elems (Taskfile.tasks taskfile))
 
 showToday :: ContextFilter -> Taskfile.Taskfile -> IO ()
-showToday All taskfile =
+showToday contextFilter taskfile =
   todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
   where
-    todayTasks = L.filter takenOver (Map.elems (Taskfile.tasks taskfile))
-showToday (Include c) taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
-  where
-    taskForToday task = context task == c && takenOver task
-    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
-showToday (Exclude c) taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
-  where
-    taskForToday task = context task /= c && takenOver task
-    todayTasks = L.filter taskForToday (Map.elems (Taskfile.tasks taskfile))
+    todayTask t = takenOver t && inContext contextFilter t
+    todayTasks = L.filter todayTask (Map.elems (Taskfile.tasks taskfile))
 
 showEmpty :: IO ()
 showEmpty = do
@@ -226,10 +203,7 @@ showTasks contextFilter taskfile currentTime = do
   spacer
   where
     contextTasks =
-      case contextFilter of
-        All -> Taskfile.tasks taskfile
-        Include c -> Tasks.forContext c (Taskfile.tasks taskfile)
-        Exclude c -> Tasks.exceptContext c (Taskfile.tasks taskfile)
+      Map.filter (inContext contextFilter) (Taskfile.tasks taskfile)
     body =
       case totalCount contextTasks of
         0 -> showEmpty

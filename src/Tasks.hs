@@ -35,6 +35,11 @@ type TaskId = Int
 
 type Tasks = Map.HashMap TaskId Task
 
+data ContextFilter
+  = All
+  | Include Tasks.Context
+  | Exclude Tasks.Context
+
 emptyTasks :: Tasks
 emptyTasks = Map.empty
 
@@ -92,11 +97,10 @@ started task = status task `elem` [Progress, Cancelled, Done]
 takenOver :: Task -> Bool
 takenOver task = status task `elem` [Pending, Progress]
 
-forContext :: Context -> Tasks -> Tasks
-forContext c = Map.filter (\t -> context t == c)
-
-exceptContext :: Context -> Tasks -> Tasks
-exceptContext c = Map.filter (\t -> context t /= c)
+inContext :: ContextFilter -> Task -> Bool
+inContext All _task = True
+inContext (Include c) task = context task == c
+inContext (Exclude c) task = context task /= c
 
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
