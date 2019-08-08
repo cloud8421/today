@@ -6,6 +6,7 @@ module Tasks where
 
 import Data.Aeson
 import qualified Data.HashMap.Strict as Map
+import Data.HashMap.Strict (member)
 import Data.Hourglass (timeDiff)
 import Data.Hourglass.Types.Orphans
 import Data.Text (Text)
@@ -62,10 +63,9 @@ clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
 updateTask :: (Task -> Task) -> TaskId -> Tasks -> Either String Tasks
-updateTask updateFn taskId tasks =
-  case Map.lookup taskId tasks of
-    Nothing -> Left "Task not found"
-    Just task -> Right (Map.adjust updateFn taskId tasks)
+updateTask updateFn taskId tasks
+  | taskId `member` tasks = Right (Map.adjust updateFn taskId tasks)
+  | otherwise = Left "Task not found"
 
 updateStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
 updateStatus newStatus tasks taskId currentTime =
