@@ -204,28 +204,28 @@ update sc currentTime taskfile =
         CheckTask taskId ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Done currentTasks taskId currentTime)
+            (Tasks.updateStatus Tasks.Done  currentTime taskId currentTasks)
         CancelTask taskId ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Cancelled currentTasks taskId currentTime)
+            (Tasks.updateStatus Tasks.Cancelled currentTime taskId currentTasks)
         StartTask taskId ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Progress currentTasks taskId currentTime)
+            (Tasks.updateStatus Tasks.Progress currentTime taskId currentTasks)
         PauseTask taskId ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Pending currentTasks taskId currentTime)
+            (Tasks.updateStatus Tasks.Pending currentTime taskId currentTasks)
         Update taskId textFrags ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateText text currentTasks taskId currentTime)
+            (Tasks.updateText text currentTime taskId currentTasks)
           where text = T.intercalate " " textFrags
         Move taskId context ->
           mapRight
             (Taskfile.updateTasks taskfile)
-            (Tasks.updateContext context currentTasks taskId currentTime)
+            (Tasks.updateContext context currentTime taskId currentTasks)
         Clear -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> Right taskfile

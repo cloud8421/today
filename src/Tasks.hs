@@ -67,23 +67,17 @@ updateTask updateFn taskId tasks
   | taskId `member` tasks = Right (Map.adjust updateFn taskId tasks)
   | otherwise = Left "Task not found"
 
-updateStatus :: Status -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateStatus newStatus tasks taskId currentTime =
-  updateTask
-    (\t -> t {status = newStatus, lastUpdate = currentTime})
-    taskId
-    tasks
+updateStatus :: Status -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateStatus newStatus currentTime =
+  updateTask (\t -> t {status = newStatus, lastUpdate = currentTime})
 
-updateText :: Text -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateText newText tasks taskId currentTime =
-  updateTask (\t -> t {text = newText, lastUpdate = currentTime}) taskId tasks
+updateText :: Text -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateText newText currentTime =
+  updateTask (\t -> t {text = newText, lastUpdate = currentTime})
 
-updateContext :: Context -> Tasks -> TaskId -> Elapsed -> Either String Tasks
-updateContext newContext tasks taskId currentTime =
-  updateTask
-    (\t -> t {context = newContext, lastUpdate = currentTime})
-    taskId
-    tasks
+updateContext :: Context -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateContext newContext currentTime =
+  updateTask (\t -> t {context = newContext, lastUpdate = currentTime})
 
 age :: Task -> Elapsed -> Seconds
 age task currentTime = timeDiff currentTime (lastUpdate task)

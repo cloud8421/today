@@ -30,12 +30,12 @@ spec =
           let tasks = Tasks.add "Example" currentTime "work" mempty
           Tasks.countByStatus Tasks.Pending tasks `shouldBe` 1
           let Right newTasks =
-                Tasks.updateStatus Tasks.Progress tasks 1 currentTime
+                Tasks.updateStatus Tasks.Progress currentTime 1 tasks
           Tasks.countByStatus Tasks.Pending newTasks `shouldBe` 0
           Tasks.countByStatus Tasks.Progress newTasks `shouldBe` 1
       context "for a non existing task" $
         it "returns an error" $ \currentTime ->
-          Tasks.updateStatus Tasks.Progress mempty 1 currentTime `shouldBe`
+          Tasks.updateStatus Tasks.Progress currentTime 1 mempty `shouldBe`
           Left "Task not found"
     describe "counting tasks" $
       it "counts by status" $ \currentTime -> do
