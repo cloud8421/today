@@ -6,6 +6,7 @@
 module Lib where
 
 import Control.Monad.Except (MonadError)
+import Control.Monad.Reader (runReaderT, MonadReader)
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Data.Semigroup ((<>))
@@ -203,35 +204,35 @@ deleteRefOptions :: Parser SubCommand
 deleteRefOptions = DeleteRef <$> strArgument (help Help.refRepoAction)
 
 update ::
-  MonadError String m =>
+  (MonadError String m, MonadReader Elapsed m) =>
      SubCommand
-  -> Elapsed
   -> Taskfile.Taskfile
   -> m Taskfile.Taskfile
-update sc currentTime taskfile =
+update sc taskfile =
   let currentTasks = Taskfile.tasks taskfile
       currentRefs = Taskfile.refs taskfile
    in case sc of
-        AddTask taskContext textFrags ->
+        AddTask taskContext textFrags -> do
+          let text = T.intercalate " " textFrags
+          newTasks <- Tasks.add text taskContext currentTasks
           pure (Taskfile.updateTasks taskfile newTasks)
-          where text = T.intercalate " " textFrags
-                newTasks = Tasks.add text currentTime taskContext currentTasks
         ListTasks _context -> pure taskfile
-        DeleteTask taskId -> pure (Taskfile.updateTasks taskfile newTasks)
-          where newTasks = Tasks.remove currentTasks taskId
+        DeleteTask taskId -> do
+          let newTasks = Tasks.remove currentTasks taskId
+          pure (Taskfile.updateTasks taskfile newTasks)
         CheckTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done taskId currentTasks
         CancelTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Cancelled currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Cancelled taskId currentTasks
         StartTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Progress currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Progress taskId currentTasks
         PauseTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Pending currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Pending taskId currentTasks
         Update taskId textFrags ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateText text currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateText text taskId currentTasks
           where text = T.intercalate " " textFrags
         Move taskId context ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateContext context currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateContext context taskId currentTasks
         Clear -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> pure taskfile
@@ -265,7 +266,7 @@ executeCommand = do
   Taskfile.load resolvedTaskFilePath >>= \case
     Left err -> Ui.showError err
     Right taskfile ->
-      case update (subCommand opts) currentTime taskfile of
+      case flip runReaderT currentTime $ update (subCommand opts) taskfile of
         Right newTaskfile -> do
           Taskfile.create resolvedTaskFilePath newTaskfile
           view (subCommand opts) currentTime newTaskfile

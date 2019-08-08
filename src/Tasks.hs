@@ -6,6 +6,7 @@
 module Tasks where
 
 import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Reader (MonadReader, ask)
 import Data.Aeson
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map, member)
@@ -50,11 +51,12 @@ defaultContext = "inbox"
 newTaskId :: Tasks -> TaskId
 newTaskId = (+) 1 . maximumDef 0 . Map.keys
 
-add :: Text -> Elapsed -> Context -> Tasks -> Tasks
-add text currentTime context tasks =
+add :: MonadReader Elapsed m => Text -> Context -> Tasks -> m Tasks
+add text context tasks = do
+  currentTime <- ask
   let taskId = newTaskId tasks
       task = Task Pending text currentTime context
-   in Map.insert taskId task tasks
+  pure (Map.insert taskId task tasks)
 
 remove :: Tasks -> TaskId -> Tasks
 remove = flip Map.delete
@@ -62,20 +64,22 @@ remove = flip Map.delete
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateTask :: MonadError String m => (Task -> Task) -> Elapsed -> TaskId -> Tasks -> m Tasks
-updateTask updateFn currentTime taskId tasks
-  | taskId `member` tasks = pure (Map.adjust (\t -> (updateFn t) { lastUpdate = currentTime }) taskId tasks)
+updateTask :: (MonadError String m, MonadReader Elapsed m) => (Task -> Task) -> TaskId -> Tasks -> m Tasks
+updateTask updateFn taskId tasks
+  | taskId `member` tasks = do
+      currentTime <- ask
+      pure (Map.adjust (\t -> (updateFn t) { lastUpdate = currentTime }) taskId tasks)
   | otherwise = throwError "Task not found"
 
-updateStatus :: MonadError String m => Status -> Elapsed -> TaskId -> Tasks -> m Tasks
+updateStatus :: (MonadError String m, MonadReader Elapsed m) => Status -> TaskId -> Tasks -> m Tasks
 updateStatus newStatus =
   updateTask (\t -> t {status = newStatus})
 
-updateText :: MonadError String m => Text -> Elapsed -> TaskId -> Tasks -> m Tasks
+updateText :: (MonadError String m, MonadReader Elapsed m) => Text -> TaskId -> Tasks -> m Tasks
 updateText newText =
   updateTask (\t -> t {text = newText})
 
-updateContext :: MonadError String m => Context -> Elapsed -> TaskId -> Tasks -> m Tasks
+updateContext :: (MonadError String m, MonadReader Elapsed m) => Context -> TaskId -> Tasks -> m Tasks
 updateContext newContext =
   updateTask (\t -> t {context = newContext})
 
