@@ -62,22 +62,22 @@ remove = flip Map.delete
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateTask :: MonadError String m => (Task -> Task) -> TaskId -> Tasks -> m Tasks
-updateTask updateFn taskId tasks
-  | taskId `member` tasks = pure (Map.adjust updateFn taskId tasks)
+updateTask :: MonadError String m => (Task -> Task) -> Elapsed -> TaskId -> Tasks -> m Tasks
+updateTask updateFn currentTime taskId tasks
+  | taskId `member` tasks = pure (Map.adjust (\t -> (updateFn t) { lastUpdate = currentTime }) taskId tasks)
   | otherwise = throwError "Task not found"
 
 updateStatus :: MonadError String m => Status -> Elapsed -> TaskId -> Tasks -> m Tasks
-updateStatus newStatus currentTime =
-  updateTask (\t -> t {status = newStatus, lastUpdate = currentTime})
+updateStatus newStatus =
+  updateTask (\t -> t {status = newStatus})
 
 updateText :: MonadError String m => Text -> Elapsed -> TaskId -> Tasks -> m Tasks
-updateText newText currentTime =
-  updateTask (\t -> t {text = newText, lastUpdate = currentTime})
+updateText newText =
+  updateTask (\t -> t {text = newText})
 
 updateContext :: MonadError String m => Context -> Elapsed -> TaskId -> Tasks -> m Tasks
-updateContext newContext currentTime =
-  updateTask (\t -> t {context = newContext, lastUpdate = currentTime})
+updateContext newContext =
+  updateTask (\t -> t {context = newContext})
 
 age :: Task -> Elapsed -> Seconds
 age task currentTime = timeDiff currentTime (lastUpdate task)
