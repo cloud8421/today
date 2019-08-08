@@ -159,17 +159,21 @@ statusLabel Progress = ":spinner:"
 statusLabel Done = ":white_check_mark:"
 statusLabel Cancelled = ":x:"
 
-todayList :: [Task] -> RefMap -> T.Text -> IO ()
-todayList [] refMap title = do
-  spacer
-  TIO.putStrLn (padLeft "No tasks available")
-  spacer
-todayList tasks refMap title = do
-  spacer
-  TIO.putStrLn title
-  mapM_ taskLine tasks
-  spacer
+todayList :: Tasks -> RefMap -> T.Text -> IO ()
+todayList tasks refMap title =
+  case totalCount tasks of
+    0 -> showEmpty
+    other -> taskLines title tasks
   where
+    showEmpty = do
+      spacer
+      TIO.putStrLn (padLeft "No tasks available")
+      spacer
+    taskLines title tasks = do
+      spacer
+      TIO.putStrLn title
+      mapM_ taskLine tasks
+      spacer
     taskLine task = do
       TIO.putStr "• "
       TIO.putStr (statusLabel (status task))
@@ -181,14 +185,14 @@ showOutForToday contextFilter taskfile =
   todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
   where
     todayTask t = started t && inContext contextFilter t
-    todayTasks = L.filter todayTask (Map.elems (Taskfile.tasks taskfile))
+    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
 
 showToday :: ContextFilter -> Taskfile.Taskfile -> IO ()
 showToday contextFilter taskfile =
   todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
   where
     todayTask t = takenOver t && inContext contextFilter t
-    todayTasks = L.filter todayTask (Map.elems (Taskfile.tasks taskfile))
+    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
 
 showEmpty :: IO ()
 showEmpty = do
