@@ -29,6 +29,7 @@ dependencies:
 - hourglass
 - hourglass-orphans
 - template
+- safe
 - optparse-applicative
 - regex-pcre
 - sort

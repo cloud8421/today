@@ -13,6 +13,7 @@ import Data.Text (Text)
 import GHC.Generics
 import Refs (Ref, extractRefs)
 import Time.Types (Elapsed, Seconds)
+import Safe (maximumDef)
 
 data Status
   = Pending
@@ -45,10 +46,7 @@ defaultContext :: String
 defaultContext = "inbox"
 
 newTaskId :: Tasks -> TaskId
-newTaskId tasks =
-  case Map.keys tasks of
-    [] -> 1
-    keys -> Prelude.maximum keys + 1
+newTaskId = (+) 1 . maximumDef 0 . Map.keys
 
 add :: Text -> Elapsed -> Context -> Tasks -> Tasks
 add text currentTime context tasks =
