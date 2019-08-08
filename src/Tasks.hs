@@ -117,10 +117,9 @@ groupByContext = Map.foldlWithKey' mergeContexts mempty
   where
     mergeContexts contexts taskId task =
       Map.alter (mergeTasks taskId task) (context task) contexts
-    mergeTasks taskId task maybeOtherTasks =
-      case maybeOtherTasks of
-        Just otherTasks -> Just (Map.insert taskId task otherTasks)
-        Nothing -> Just (Map.fromList [(taskId, task)])
+    mergeTasks taskId task (Just otherTasks) =
+      Just (Map.insert taskId task otherTasks)
+    mergeTasks taskId task Nothing = Just (Map.fromList [(taskId, task)])
 
 refs :: Task -> [Ref]
 refs = extractRefs . text
