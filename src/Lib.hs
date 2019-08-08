@@ -1,13 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Lib where
 
-import Control.Monad.Except (MonadError)
+import Control.Monad.Except (runExceptT, MonadError)
 import Control.Monad.Reader (runReaderT, MonadReader)
-import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Data.Semigroup ((<>))
 import Data.Text as T
@@ -257,20 +255,23 @@ view sc currentTime taskfile =
 
 executeCommand :: IO ()
 executeCommand = do
-  (opts :: Opts) <- customExecParser (prefs $ disambiguate <> showHelpOnEmpty) optsParser
+  (opts :: Opts) <-
+    customExecParser (prefs $ disambiguate <> showHelpOnEmpty) optsParser
   currentTime <- liftIO timeCurrent
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure
     resolvedTaskFilePath
     (Taskfile.new (Tasks.defaultTasks currentTime) Refs.defaultRefMap)
-  Taskfile.load resolvedTaskFilePath >>= \case
-    Left err -> Ui.showError err
-    Right taskfile ->
-      case flip runReaderT currentTime $ update (subCommand opts) taskfile of
-        Right newTaskfile -> do
-          Taskfile.create resolvedTaskFilePath newTaskfile
-          view (subCommand opts) currentTime newTaskfile
-        Left err -> Ui.showError err
+  printError =<<
+    runExceptT
+      (do taskfile <- Taskfile.load resolvedTaskFilePath
+          newTaskfile <-
+            runReaderT (update (subCommand opts) taskfile) currentTime
+          liftIO $ view (subCommand opts) currentTime newTaskfile)
+
+printError :: Either String () -> IO ()
+printError (Right _) = pure ()
+printError (Left err) = Ui.showError err
 
 ------------------------------------------------------------
 -- Arguably these should go in a file called `Options.Applicative.Extra`.
