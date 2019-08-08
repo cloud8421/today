@@ -82,7 +82,7 @@ taskFilePathOption =
 
 taskContextOption :: Parser Text
 taskContextOption =
-  textOption
+  strOption
     (long "context" <> short 'c' <> value Tasks.defaultContext <>
      help Help.contextFilter)
 
@@ -117,7 +117,7 @@ addTaskCommand = command "add" (info addOptions (progDesc Help.addTask))
 
 addOptions :: Parser SubCommand
 addOptions =
-  AddTask <$> taskContextOption <*> many (textArgument (help Help.taskText))
+  AddTask <$> taskContextOption <*> many (strArgument (help Help.taskText))
 
 deleteTaskCommand :: Mod CommandFields SubCommand
 deleteTaskCommand =
@@ -157,14 +157,14 @@ updateTaskTextCommand =
 
 updateTextOptions :: Parser SubCommand
 updateTextOptions =
-  Update <$> taskIdArgument <*> many (textArgument (help Help.taskText))
+  Update <$> taskIdArgument <*> many (strArgument (help Help.taskText))
 
 moveTaskCommand :: Mod CommandFields SubCommand
 moveTaskCommand = command "move" (info moveTaskOptions (progDesc Help.moveTask))
 
 moveTaskOptions :: Parser SubCommand
 moveTaskOptions =
-  Move <$> taskIdArgument <*> textArgument (help Help.contextMove)
+  Move <$> taskIdArgument <*> strArgument (help Help.contextMove)
 
 clearCommand :: Mod CommandFields SubCommand
 clearCommand = command "clear" (info (pure Clear) (progDesc Help.clearTasks))
@@ -190,15 +190,15 @@ addRefCommand = command "set-ref" (info addRefOptions (progDesc Help.addRef))
 
 addRefOptions :: Parser SubCommand
 addRefOptions =
-  AddRef <$> textArgument (help Help.refService) <*>
-  textArgument (help Help.refUrlTemplate)
+  AddRef <$> strArgument (help Help.refService) <*>
+  strArgument (help Help.refUrlTemplate)
 
 deleteRefCommand :: Mod CommandFields SubCommand
 deleteRefCommand =
   command "delete-ref" (info deleteRefOptions (progDesc Help.deleteRef))
 
 deleteRefOptions :: Parser SubCommand
-deleteRefOptions = DeleteRef <$> textArgument (help Help.refRepoAction)
+deleteRefOptions = DeleteRef <$> strArgument (help Help.refRepoAction)
 
 update ::
      SubCommand
@@ -271,12 +271,6 @@ executeCommand = do
 ------------------------------------------------------------
 -- Arguably these should go in a file called `Options.Applicative.Extra`.
 ------------------------------------------------------------
-textArgument :: Mod ArgumentFields String -> Parser Text
-textArgument = fmap pack . strArgument
-
-textOption :: Mod OptionFields String -> Parser Text
-textOption = fmap pack . strOption
-
 maybeTextOption :: Mod OptionFields (Maybe Text) -> Parser (Maybe Text)
 maybeTextOption = option maybeText
   where
