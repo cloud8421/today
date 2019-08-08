@@ -253,7 +253,7 @@ view sc currentTime taskfile =
 
 executeCommand :: IO ()
 executeCommand = do
-  (opts :: Opts) <- execParser optsParser
+  (opts :: Opts) <- customExecParser (prefs $ disambiguate <> showHelpOnEmpty) optsParser
   currentTime <- liftIO timeCurrent
   resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
   Taskfile.ensure
