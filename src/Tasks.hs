@@ -42,7 +42,7 @@ data ContextFilter
   | Include Tasks.Context
   | Exclude Tasks.Context
 
-defaultContext :: String
+defaultContext :: Context
 defaultContext = "inbox"
 
 newTaskId :: Tasks -> TaskId
