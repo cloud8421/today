@@ -1,9 +1,11 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Lib where
 
+import Control.Monad.Except (MonadError)
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Data.Semigroup ((<>))
@@ -201,23 +203,24 @@ deleteRefOptions :: Parser SubCommand
 deleteRefOptions = DeleteRef <$> strArgument (help Help.refRepoAction)
 
 update ::
+  MonadError String m =>
      SubCommand
   -> Elapsed
   -> Taskfile.Taskfile
-  -> Either String Taskfile.Taskfile
+  -> m Taskfile.Taskfile
 update sc currentTime taskfile =
   let currentTasks = Taskfile.tasks taskfile
       currentRefs = Taskfile.refs taskfile
    in case sc of
         AddTask taskContext textFrags ->
-          Right (Taskfile.updateTasks taskfile newTasks)
+          pure (Taskfile.updateTasks taskfile newTasks)
           where text = T.intercalate " " textFrags
                 newTasks = Tasks.add text currentTime taskContext currentTasks
-        ListTasks _context -> Right taskfile
-        DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
+        ListTasks _context -> pure taskfile
+        DeleteTask taskId -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.remove currentTasks taskId
         CheckTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done  currentTime taskId currentTasks
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done currentTime taskId currentTasks
         CancelTask taskId ->
             Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Cancelled currentTime taskId currentTasks
         StartTask taskId ->
@@ -229,15 +232,15 @@ update sc currentTime taskfile =
           where text = T.intercalate " " textFrags
         Move taskId context ->
             Taskfile.updateTasks taskfile <$> Tasks.updateContext context currentTime taskId currentTasks
-        Clear -> Right (Taskfile.updateTasks taskfile newTasks)
+        Clear -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
-        Today _maybeContext -> Right taskfile
-        OutForToday _maybeContext -> Right taskfile
-        ListRefs -> Right taskfile
+        Today _maybeContext -> pure taskfile
+        OutForToday _maybeContext -> pure taskfile
+        ListRefs -> pure taskfile
         AddRef service urlTemplate ->
             Taskfile.updateRefs taskfile <$>
             Refs.setRef service urlTemplate currentRefs
-        DeleteRef repo -> Right (Taskfile.updateRefs taskfile newRefs)
+        DeleteRef repo -> pure (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 
 view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()

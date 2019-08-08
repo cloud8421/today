@@ -35,6 +35,7 @@ dependencies:
 - sort
 - text
 - time
+- mtl
 - containers
 
 ghc-options:

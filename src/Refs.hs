@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Refs where
 
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -69,11 +71,11 @@ buildRefUrl ref urlTemplate =
 refId :: Ref -> Text
 refId ref = T.intercalate "#" [service ref, identifier ref]
 
-setRef :: Service -> UrlTemplate -> RefMap -> Either String RefMap
+setRef :: MonadError String m => Service -> UrlTemplate -> RefMap -> m RefMap
 setRef service urlTemplate refMap =
   case TPL.templateSafe urlTemplate of
-    Right _template -> Right (Map.insert service urlTemplate refMap)
-    Left (row, col) -> Left (printf "Template error at position %d, %d" row col)
+    Right _template -> pure (Map.insert service urlTemplate refMap)
+    Left (row, col) -> throwError (printf "Template error at position %d, %d" row col)
 
 removeRef :: Service -> RefMap -> RefMap
 removeRef = Map.delete

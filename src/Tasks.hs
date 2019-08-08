@@ -1,9 +1,11 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
 module Tasks where
 
+import Control.Monad.Except (MonadError, throwError)
 import Data.Aeson
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map, member)
@@ -60,20 +62,20 @@ remove = flip Map.delete
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateTask :: (Task -> Task) -> TaskId -> Tasks -> Either String Tasks
+updateTask :: MonadError String m => (Task -> Task) -> TaskId -> Tasks -> m Tasks
 updateTask updateFn taskId tasks
-  | taskId `member` tasks = Right (Map.adjust updateFn taskId tasks)
-  | otherwise = Left "Task not found"
+  | taskId `member` tasks = pure (Map.adjust updateFn taskId tasks)
+  | otherwise = throwError "Task not found"
 
-updateStatus :: Status -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateStatus :: MonadError String m => Status -> Elapsed -> TaskId -> Tasks -> m Tasks
 updateStatus newStatus currentTime =
   updateTask (\t -> t {status = newStatus, lastUpdate = currentTime})
 
-updateText :: Text -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateText :: MonadError String m => Text -> Elapsed -> TaskId -> Tasks -> m Tasks
 updateText newText currentTime =
   updateTask (\t -> t {text = newText, lastUpdate = currentTime})
 
-updateContext :: Context -> Elapsed -> TaskId -> Tasks -> Either String Tasks
+updateContext :: MonadError String m => Context -> Elapsed -> TaskId -> Tasks -> m Tasks
 updateContext newContext currentTime =
   updateTask (\t -> t {context = newContext, lastUpdate = currentTime})
 
