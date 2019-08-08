@@ -6,7 +6,6 @@ module Lib where
 
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
-import Data.Either.Combinators (mapRight)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Help
@@ -202,39 +201,26 @@ update sc currentTime taskfile =
         DeleteTask taskId -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.remove currentTasks taskId
         CheckTask taskId ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Done  currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done  currentTime taskId currentTasks
         CancelTask taskId ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Cancelled currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Cancelled currentTime taskId currentTasks
         StartTask taskId ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Progress currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Progress currentTime taskId currentTasks
         PauseTask taskId ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateStatus Tasks.Pending currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Pending currentTime taskId currentTasks
         Update taskId textFrags ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateText text currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateText text currentTime taskId currentTasks
           where text = T.intercalate " " textFrags
         Move taskId context ->
-          mapRight
-            (Taskfile.updateTasks taskfile)
-            (Tasks.updateContext context currentTime taskId currentTasks)
+            Taskfile.updateTasks taskfile <$> Tasks.updateContext context currentTime taskId currentTasks
         Clear -> Right (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> Right taskfile
         OutForToday _maybeContext -> Right taskfile
         ListRefs -> Right taskfile
         AddRef service urlTemplate ->
-          mapRight
-            (Taskfile.updateRefs taskfile)
-            (Refs.setRef service urlTemplate currentRefs)
+            Taskfile.updateRefs taskfile <$>
+            Refs.setRef service urlTemplate currentRefs
         DeleteRef repo -> Right (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 

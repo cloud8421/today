@@ -3,7 +3,6 @@
 module Refs where
 
 import Data.Aeson
-import Data.Either.Combinators (mapRight)
 import qualified Data.HashMap.Strict as Map
 import Data.List as L
 import Data.Text as T
