@@ -40,9 +40,6 @@ data ContextFilter
   | Include Tasks.Context
   | Exclude Tasks.Context
 
-emptyTasks :: Tasks
-emptyTasks = Map.empty
-
 defaultContext :: String
 defaultContext = "inbox"
 
@@ -122,7 +119,7 @@ countByStatus s = Map.foldl' operator 0
       | otherwise = count
 
 groupByContext :: Tasks -> Map.HashMap Context Tasks
-groupByContext = Map.foldlWithKey' mergeContexts Map.empty
+groupByContext = Map.foldlWithKey' mergeContexts mempty
   where
     mergeContexts contexts taskId task =
       Map.alter (mergeTasks taskId task) (context task) contexts

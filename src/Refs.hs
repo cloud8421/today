@@ -28,9 +28,6 @@ data Ref =
 
 type RefMap = Map.HashMap Service UrlTemplate
 
-emptyRefMap :: RefMap
-emptyRefMap = Map.empty
-
 defaultRefMap :: RefMap
 defaultRefMap =
   Map.fromList [("T", "https://github.com/cloud8421/t/issues/$id")]
