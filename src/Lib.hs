@@ -10,7 +10,9 @@ import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Help
+import qualified NewUi
 import Options.Applicative
+import Options.Applicative.Help.Pretty (putDoc)
 import qualified Refs
 import System.Hourglass (timeCurrent)
 import qualified Taskfile
@@ -259,9 +261,11 @@ view sc taskfile = do
     Today contextFilter -> liftIO $ Ui.showToday contextFilter taskfile
     OutForToday contextFilter ->
       liftIO $ Ui.showOutForToday contextFilter taskfile
-    ListRefs -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
-    AddRef _repo _repoPath -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
-    DeleteRef _repo -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
+    AddRef _service _urlTemplate ->
+      liftIO $ putDoc (NewUi.refList (Taskfile.refs taskfile))
+    DeleteRef _service ->
+      liftIO $ putDoc (NewUi.refList (Taskfile.refs taskfile))
+    ListRefs -> liftIO $ putDoc (NewUi.refList (Taskfile.refs taskfile))
     ListTasks contextFilter ->
       liftIO $ Ui.showTasks contextFilter taskfile currentTime
     _ -> liftIO $ Ui.showTasks Ui.All taskfile currentTime
