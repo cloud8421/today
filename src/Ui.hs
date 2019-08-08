@@ -163,7 +163,7 @@ todayList :: Tasks -> RefMap -> T.Text -> IO ()
 todayList tasks refMap title =
   case totalCount tasks of
     0 -> showEmpty
-    other -> taskLines title tasks
+    _ -> taskLines title tasks
   where
     showEmpty = do
       spacer
@@ -211,7 +211,7 @@ showTasks contextFilter taskfile currentTime = do
     body =
       case totalCount contextTasks of
         0 -> showEmpty
-        other -> do
+        _ -> do
           showTaskGroups contextTasks (Taskfile.refs taskfile) currentTime
           showStats contextTasks
 
@@ -222,7 +222,7 @@ showRefs refMap =
       spacer
       TIO.putStrLn "No ref lookup rules setup in the current Taskfile"
       spacer
-    _other -> do
+    _ -> do
       spacer
       mapM_ showRef (Map.toList refMap)
       spacer
