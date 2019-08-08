@@ -5,8 +5,8 @@
 module Tasks where
 
 import Data.Aeson
-import qualified Data.HashMap.Strict as Map
-import Data.HashMap.Strict (member)
+import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map, member)
 import Data.Hourglass (timeDiff)
 import Data.Hourglass.Types.Orphans
 import Data.Text (Text)
@@ -35,7 +35,7 @@ data Task =
 
 type TaskId = Int
 
-type Tasks = Map.HashMap TaskId Task
+type Tasks = Map TaskId Task
 
 data ContextFilter
   = All
@@ -100,7 +100,7 @@ defaultTasks currentTime =
     , Task Pending "Finally fix issue T#2345" currentTime "work"
     ]
 
-totalCount :: Map.HashMap k v -> Int
+totalCount :: Map k v -> Int
 totalCount = Map.size
 
 countByStatus :: Status -> Tasks -> Int
@@ -110,7 +110,7 @@ countByStatus s = Map.foldl' operator 0
       | taskStatus == s = count + 1
       | otherwise = count
 
-groupByContext :: Tasks -> Map.HashMap Context Tasks
+groupByContext :: Tasks -> Map Context Tasks
 groupByContext = Map.foldlWithKey' mergeContexts mempty
   where
     mergeContexts contexts taskId task =

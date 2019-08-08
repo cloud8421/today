@@ -9,8 +9,7 @@ module Ui
   , ContextFilter(..)
   ) where
 
-import qualified Data.HashMap.Strict as Map
-import qualified Data.List as L
+import qualified Data.Map.Strict as Map
 import qualified Data.Sort as Sort
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO

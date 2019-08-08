@@ -3,7 +3,8 @@
 module Refs where
 
 import Data.Aeson
-import qualified Data.HashMap.Strict as Map
+import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map)
 import Data.List as L
 import Data.Text as T
 import qualified Data.Text.Lazy as LZ
@@ -25,7 +26,7 @@ data Ref =
     }
   deriving (Show, Eq)
 
-type RefMap = Map.HashMap Service UrlTemplate
+type RefMap = Map Service UrlTemplate
 
 defaultRefMap :: RefMap
 defaultRefMap =

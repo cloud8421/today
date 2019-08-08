@@ -35,7 +35,7 @@ dependencies:
 - sort
 - text
 - time
-- unordered-containers
+- containers
 
 ghc-options:
 - -Wall
