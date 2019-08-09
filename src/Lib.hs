@@ -4,9 +4,9 @@
 
 module Lib where
 
-import Control.Monad.Except (runExceptT, MonadError)
-import Control.Monad.Reader (runReaderT, MonadReader)
+import Control.Monad.Except (MonadError, runExceptT)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Help
@@ -202,8 +202,8 @@ deleteRefOptions :: Parser SubCommand
 deleteRefOptions = DeleteRef <$> strArgument (help Help.refRepoAction)
 
 update ::
-  (MonadError String m, MonadReader Elapsed m) =>
-     SubCommand
+     (MonadError String m, MonadReader Elapsed m)
+  => SubCommand
   -> Taskfile.Taskfile
   -> m Taskfile.Taskfile
 update sc taskfile =
@@ -219,39 +219,48 @@ update sc taskfile =
           let newTasks = Tasks.remove currentTasks taskId
           pure (Taskfile.updateTasks taskfile newTasks)
         CheckTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Done taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateStatus Tasks.Done taskId currentTasks
         CancelTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Cancelled taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateStatus Tasks.Cancelled taskId currentTasks
         StartTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Progress taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateStatus Tasks.Progress taskId currentTasks
         PauseTask taskId ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateStatus Tasks.Pending taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateStatus Tasks.Pending taskId currentTasks
         Update taskId textFrags ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateText text taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateText text taskId currentTasks
           where text = T.intercalate " " textFrags
         Move taskId context ->
-            Taskfile.updateTasks taskfile <$> Tasks.updateContext context taskId currentTasks
+          Taskfile.updateTasks taskfile <$>
+          Tasks.updateContext context taskId currentTasks
         Clear -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         Today _maybeContext -> pure taskfile
         OutForToday _maybeContext -> pure taskfile
         ListRefs -> pure taskfile
         AddRef service urlTemplate ->
-            Taskfile.updateRefs taskfile <$>
-            Refs.setRef service urlTemplate currentRefs
+          Taskfile.updateRefs taskfile <$>
+          Refs.setRef service urlTemplate currentRefs
         DeleteRef repo -> pure (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 
-view :: SubCommand -> Elapsed -> Taskfile.Taskfile -> IO ()
-view sc currentTime taskfile =
+view :: MonadReader Elapsed m => SubCommand -> Taskfile.Taskfile -> m (IO ())
+view sc taskfile = do
+  currentTime <- ask
   case sc of
-    Today contextFilter -> Ui.showToday contextFilter taskfile
-    OutForToday contextFilter -> Ui.showOutForToday contextFilter taskfile
-    ListRefs -> Ui.showRefs (Taskfile.refs taskfile)
-    AddRef _repo _repoPath -> Ui.showRefs (Taskfile.refs taskfile)
-    DeleteRef _repo -> Ui.showRefs (Taskfile.refs taskfile)
-    ListTasks contextFilter -> Ui.showTasks contextFilter taskfile currentTime
-    _ -> Ui.showTasks Ui.All taskfile currentTime
+    Today contextFilter -> pure $ Ui.showToday contextFilter taskfile
+    OutForToday contextFilter ->
+      pure $ Ui.showOutForToday contextFilter taskfile
+    ListRefs -> pure $ Ui.showRefs (Taskfile.refs taskfile)
+    AddRef _repo _repoPath -> pure $ Ui.showRefs (Taskfile.refs taskfile)
+    DeleteRef _repo -> pure $ Ui.showRefs (Taskfile.refs taskfile)
+    ListTasks contextFilter ->
+      pure $ Ui.showTasks contextFilter taskfile currentTime
+    _ -> pure $ Ui.showTasks Ui.All taskfile currentTime
 
 executeCommand :: IO ()
 executeCommand = do
@@ -267,10 +276,10 @@ executeCommand = do
       (do taskfile <- Taskfile.load resolvedTaskFilePath
           newTaskfile <-
             runReaderT (update (subCommand opts) taskfile) currentTime
-          liftIO $ view (subCommand opts) currentTime newTaskfile)
+          runReaderT (view (subCommand opts) newTaskfile) currentTime)
 
-printError :: Either String () -> IO ()
-printError (Right _) = pure ()
+printError :: Either String (IO ()) -> IO ()
+printError (Right v) = v
 printError (Left err) = Ui.showError err
 
 ------------------------------------------------------------
