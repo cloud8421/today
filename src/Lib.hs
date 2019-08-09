@@ -5,7 +5,7 @@
 module Lib where
 
 import Control.Monad.Except (MonadError, runExceptT)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
@@ -248,19 +248,23 @@ update sc taskfile =
         DeleteRef repo -> pure (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 
-view :: MonadReader Elapsed m => SubCommand -> Taskfile.Taskfile -> m (IO ())
+view ::
+     (MonadReader Elapsed m, MonadIO m)
+  => SubCommand
+  -> Taskfile.Taskfile
+  -> m ()
 view sc taskfile = do
   currentTime <- ask
   case sc of
-    Today contextFilter -> pure $ Ui.showToday contextFilter taskfile
+    Today contextFilter -> liftIO $ Ui.showToday contextFilter taskfile
     OutForToday contextFilter ->
-      pure $ Ui.showOutForToday contextFilter taskfile
-    ListRefs -> pure $ Ui.showRefs (Taskfile.refs taskfile)
-    AddRef _repo _repoPath -> pure $ Ui.showRefs (Taskfile.refs taskfile)
-    DeleteRef _repo -> pure $ Ui.showRefs (Taskfile.refs taskfile)
+      liftIO $ Ui.showOutForToday contextFilter taskfile
+    ListRefs -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
+    AddRef _repo _repoPath -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
+    DeleteRef _repo -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
     ListTasks contextFilter ->
-      pure $ Ui.showTasks contextFilter taskfile currentTime
-    _ -> pure $ Ui.showTasks Ui.All taskfile currentTime
+      liftIO $ Ui.showTasks contextFilter taskfile currentTime
+    _ -> liftIO $ Ui.showTasks Ui.All taskfile currentTime
 
 executeCommand :: IO ()
 executeCommand = do
@@ -278,8 +282,8 @@ executeCommand = do
             (update (subCommand opts) taskfile >>= view (subCommand opts))
             currentTime)
 
-printError :: Either String (IO ()) -> IO ()
-printError (Right v) = v
+printError :: Either String () -> IO ()
+printError (Right _) = pure ()
 printError (Left err) = Ui.showError err
 
 ------------------------------------------------------------
