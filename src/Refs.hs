@@ -4,10 +4,10 @@
 module Refs where
 
 import Control.Monad.Except (MonadError, throwError)
-import Data.Aeson
+import Data.Aeson ()
+import Data.List as L
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
-import Data.List as L
 import Data.Text as T
 import qualified Data.Text.Lazy as LZ
 import qualified Data.Text.Template as TPL
@@ -47,9 +47,9 @@ extractRefs text = L.map builder matches
     result = unpack text =~ refMatcher
     rawMatches = getAllTextMatches result
     matches = L.map pack rawMatches
-    builder match =
-      let [repo, issueNo] = splitOn "#" match
-       in Ref repo issueNo match
+    builder m =
+      let [repo, issueNo] = splitOn "#" m
+       in Ref repo issueNo m
 
 replaceRefs :: Text -> RefMap -> Text
 replaceRefs text refMap = L.foldl expandRef text (extractRefs text)
@@ -72,10 +72,11 @@ refId :: Ref -> Text
 refId ref = T.intercalate "#" [service ref, identifier ref]
 
 setRef :: MonadError String m => Service -> UrlTemplate -> RefMap -> m RefMap
-setRef service urlTemplate refMap =
+setRef refService urlTemplate refMap =
   case TPL.templateSafe urlTemplate of
-    Right _template -> pure (Map.insert service urlTemplate refMap)
-    Left (row, col) -> throwError (printf "Template error at position %d, %d" row col)
+    Right _template -> pure (Map.insert refService urlTemplate refMap)
+    Left (row, col) ->
+      throwError (printf "Template error at position %d, %d" row col)
 
 removeRef :: Service -> RefMap -> RefMap
 removeRef = Map.delete

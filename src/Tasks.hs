@@ -8,15 +8,15 @@ module Tasks where
 import Control.Monad.Except (MonadError, throwError)
 import Control.Monad.Reader (MonadReader, ask)
 import Data.Aeson
+import Data.Hourglass (timeDiff)
+import Data.Hourglass.Types.Orphans ()
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map, member)
-import Data.Hourglass (timeDiff)
-import Data.Hourglass.Types.Orphans
 import Data.Text (Text)
 import GHC.Generics
 import Refs (Ref, extractRefs)
-import Time.Types (Elapsed, Seconds)
 import Safe (maximumDef)
+import Time.Types (Elapsed, Seconds)
 
 data Status
   = Pending
@@ -52,10 +52,10 @@ newTaskId :: Tasks -> TaskId
 newTaskId = (+) 1 . maximumDef 0 . Map.keys
 
 add :: MonadReader Elapsed m => Text -> Context -> Tasks -> m Tasks
-add text context tasks = do
+add taskText taskContext tasks = do
   currentTime <- ask
   let taskId = newTaskId tasks
-      task = Task Pending text currentTime context
+      task = Task Pending taskText currentTime taskContext
   pure (Map.insert taskId task tasks)
 
 remove :: Tasks -> TaskId -> Tasks
