@@ -1,238 +1,215 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-module Ui
-  ( showTasks
-  , showOutForToday
-  , showToday
-  , showRefs
-  , showError
-  , ContextFilter(..)
-  ) where
+module Ui where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sort as Sort
-import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
-import Refs
-import System.Console.ANSI
+import qualified Data.Text as Text
+import Options.Applicative.Help.Pretty
+import qualified Refs
 import qualified Taskfile
-import Tasks
+import qualified Tasks
 import Text.Printf
 import Time.Types (Elapsed, Seconds)
 
-spacer :: IO ()
-spacer = TIO.putStrLn ""
+data RefItem =
+  RefItem
+    { service :: String
+    , urlTemplate :: String
+    }
 
-padLeft :: T.Text -> T.Text
-padLeft = T.append "  "
+newtype RefList =
+  RefList [RefItem]
 
-formatSeconds :: Seconds -> T.Text
-formatSeconds seconds = T.pack (humanDuration seconds)
+data TaskGroup =
+  TaskGroup
+    { groupName :: String
+    , groupTasks :: Tasks.Tasks
+    , ct :: Elapsed
+    , rm :: Refs.RefMap
+    }
+
+newtype Stats =
+  Stats Tasks.Tasks
+
+data TaskList =
+  TaskList
+    { taskGroups :: [TaskGroup]
+    , stats :: Stats
+    }
+
+data TodayScope
+  = Beginning
+  | End
+
+data Today =
+  Today TodayScope Tasks.Tasks Refs.RefMap
+
+newtype StatusIcon =
+  StatusIcon Tasks.Status
+
+newtype StatusLabel =
+  StatusLabel Tasks.Status
+
+data TaskText =
+  TaskText Tasks.Status String
+
+data TaskRefs =
+  TaskRefs Tasks.Task Refs.RefMap
+
+class Render a where
+  render :: a -> Doc
+
+instance Render RefItem where
+  render RefItem {service = s, urlTemplate = ut} =
+    text s <+> text "->" <+> text ut
+
+instance Render RefList where
+  render (RefList []) =
+    text "No refk lookup rules setup in the current Taskfile"
+  render (RefList someRefItems) = fillSep $ map render someRefItems
+
+instance Render Seconds where
+  render seconds = black $ text $ humanDuration seconds
+    where
+      secondsInOneHour = 60 * 60
+      secondsInOneDay = secondsInOneHour * 24
+      humanDuration s
+        | s < 60 = show s
+        | s >= 60 && s < secondsInOneHour = printf "%dm" (fromEnum (div s 60))
+        | s >= secondsInOneHour && s < secondsInOneDay =
+          printf "%dh" (fromEnum (div s secondsInOneHour))
+        | otherwise = printf "%dd" (fromEnum (div s secondsInOneDay))
+
+instance Render StatusIcon where
+  render (StatusIcon Tasks.Done) = green $ text "✔ "
+  render (StatusIcon Tasks.Pending) = magenta $ text "◻ "
+  render (StatusIcon Tasks.Progress) = text "… "
+  render (StatusIcon Tasks.Cancelled) = red $ text "✖ "
+
+instance Render StatusLabel where
+  render (StatusLabel Tasks.Done) = text ":white_check_mark:"
+  render (StatusLabel Tasks.Pending) = text ":hourglass:"
+  render (StatusLabel Tasks.Progress) = text ":spinner:"
+  render (StatusLabel Tasks.Cancelled) = text ":x:"
+
+instance Render TaskText where
+  render (TaskText Tasks.Done taskText) = black $ text taskText
+  render (TaskText Tasks.Pending taskText) = white $ text taskText
+  render (TaskText Tasks.Progress taskText) = white $ text taskText
+  render (TaskText Tasks.Cancelled taskText) = black $ text taskText
+
+instance Render TaskRefs where
+  render (TaskRefs task refMap) =
+    case Tasks.refs task of
+      [] -> empty
+      someRefs -> hardline <+> vsep (map taskRefItem someRefs)
+    where
+      taskRefItem ref =
+        text "|" <+>
+        text (Text.unpack $ Refs.refId ref) <+>
+        text ":" <+> text (Text.unpack $ Refs.resolveRef ref refMap)
+
+instance Render Stats where
+  render (Stats tasks) =
+    black (text (printf "%0.f%% of all tasks complete." percentDone)) <$$>
+    green (text (printf "%d" doneCount)) <+>
+    black (text "done ·") <+>
+    text (printf "%d" progressCount) <+>
+    black (text "in progress ·") <+>
+    magenta (text (printf "%d" pendingCount)) <+>
+    black (text "pending ·") <+>
+    red (text (printf "%d" cancelledCount)) <+> black (text "cancelled")
+    where
+      doneCount = Tasks.countByStatus Tasks.Done tasks
+      progressCount = Tasks.countByStatus Tasks.Progress tasks
+      pendingCount = Tasks.countByStatus Tasks.Pending tasks
+      cancelledCount = Tasks.countByStatus Tasks.Cancelled tasks
+      percentDone :: Float
+      percentDone =
+        case Map.size tasks of
+          0 -> 0
+          otherCount -> 100 * fromIntegral doneCount / fromIntegral otherCount
+
+instance Render TaskGroup where
+  render TaskGroup { groupName = gn
+                   , groupTasks = gts
+                   , ct = currentTime
+                   , rm = refMap
+                   } =
+    prefixedGroupName <+> groupCount <$$> groupTaskList <+> hardline
+    where
+      prefixedGroupName = underline $ text $ "@" ++ gn
+      groupCount =
+        black $
+        text $
+        printf
+          "[%d/%d]"
+          (Tasks.countByStatus Tasks.Done gts)
+          (Tasks.totalCount gts)
+      orderedTasks =
+        Sort.sortOn
+          (\(_taskId, task) -> -Tasks.lastUpdate task)
+          (Map.toList gts)
+      taskItem (taskId, task) =
+        let Tasks.Task {Tasks.status = taskStatus, Tasks.text = taskText} = task
+            taskAndAge =
+              render (TaskText taskStatus (Text.unpack taskText)) <+>
+              render (Tasks.age task currentTime)
+         in black $
+            text (printf "%3d." taskId) <+>
+            render (StatusIcon taskStatus) <+>
+            align (taskAndAge <> render (TaskRefs task refMap))
+      groupTaskList = vsep $ map taskItem orderedTasks
+
+instance Render TaskList where
+  render (TaskList [] _stats) =
+    text "No tasks in your list. Enjoy some free time!" <+>
+    hardline <+> text "You can add a new task with 't add Buy milk'"
+  render (TaskList tgs tls) = vsep (map render tgs) <$$> render tls
+
+instance Render TodayScope where
+  render Beginning = text "*Today:*"
+  render End = text "*Out for today:*"
+
+instance Render Today where
+  render (Today scope tasks refMap)
+    | Map.null tasks = text "No tasks available"
+    | otherwise = render scope <$$> vsep (map todayLine (Map.toList tasks))
+    where
+      todayLine (_id, t) =
+        text "•" <+>
+        render (StatusLabel (Tasks.status t)) <+>
+        text (Text.unpack $ Refs.replaceRefs (Tasks.text t) refMap)
+
+refList :: Refs.RefMap -> Doc
+refList refMap = hardline <+> indent 1 content <+> hardline
   where
-    secondsInOneHour = 60 * 60
-    secondsInOneDay = secondsInOneHour * 24
-    humanDuration s
-      | s < 60 = show s
-      | s >= 60 && s < secondsInOneHour = printf "%dm" (fromEnum (div s 60))
-      | s >= secondsInOneHour && s < secondsInOneDay =
-        printf "%dh" (fromEnum (div s secondsInOneHour))
-      | s >= secondsInOneDay = printf "%dd" (fromEnum (div s secondsInOneDay))
+    content = render $ RefList $ map toRefItem (Map.toList refMap)
+    toRefItem (s, ut) = RefItem (Text.unpack s) (Text.unpack ut)
 
-formatContext :: Context -> T.Text
-formatContext = T.cons '@'
-
-showGroupHeader :: Context -> Tasks -> IO ()
-showGroupHeader context tasks = do
-  setSGR [Reset]
-  TIO.putStr "  "
-  setSGR [Reset, SetUnderlining SingleUnderline]
-  TIO.putStr (formatContext context)
-  setSGR [Reset, SetColor Foreground Vivid Black]
-  TIO.putStr " "
-  putStrLn inboxCount
-  setSGR [Reset]
-  where
-    inboxCount = printf "[%d/%d]" (countByStatus Done tasks) (totalCount tasks)
-
-showTaskRefs :: Task -> RefMap -> IO ()
-showTaskRefs task refMap = mapM_ showTaskRef (refs task)
-  where
-    showTaskRef ref = do
-      TIO.putStr "          | "
-      TIO.putStr (refId ref)
-      TIO.putStr ": "
-      TIO.putStrLn (resolveRef ref refMap)
-
-showGroupBody :: Tasks -> RefMap -> Elapsed -> IO ()
-showGroupBody tasks refMap currentTime = mapM_ showTask orderedTasks
-  where
-    orderedTasks =
-      Sort.sortOn (\(id, task) -> -lastUpdate task) (Map.toList tasks)
-    showTask (id, task) = do
-      setSGR [SetColor Foreground Vivid Black]
-      TIO.putStr (T.pack (printf "%5d." id))
-      TIO.putStr " "
-      showStatus (status task)
-      TIO.putStr "  "
-      showText (status task) (text task)
-      TIO.putStr " "
-      setSGR [SetColor Foreground Vivid Black]
-      TIO.putStrLn (formatSeconds (age task currentTime))
-      showTaskRefs task refMap
-
-showStats :: Tasks -> IO ()
-showStats tasks = do
-  setSGR [SetColor Foreground Vivid Black]
-  TIO.putStrLn
-    (padLeft (T.pack (printf "%0.f%% of all tasks complete." percentDone)))
-  setSGR [SetColor Foreground Vivid Green]
-  TIO.putStr (padLeft (T.pack (printf "%d " doneCount)))
-  setSGR [SetColor Foreground Vivid Black]
-  TIO.putStr "done · "
-  setSGR [Reset]
-  TIO.putStr (T.pack (printf "%d " (countByStatus Progress tasks)))
-  setSGR [SetColor Foreground Vivid Black]
-  TIO.putStr "in progress · "
-  setSGR [SetColor Foreground Vivid Magenta]
-  TIO.putStr (T.pack (printf "%d " (countByStatus Pending tasks)))
-  setSGR [SetColor Foreground Vivid Black]
-  TIO.putStr "pending · "
-  setSGR [SetColor Foreground Vivid Red]
-  TIO.putStr (T.pack (printf "%d " (countByStatus Cancelled tasks)))
-  setSGR [SetColor Foreground Vivid Black]
-  TIO.putStr "cancelled"
-  spacer
-  where
-    doneCount = countByStatus Done tasks
-    percentDone :: Float
-    percentDone =
-      case totalCount tasks of
-        0 -> 0
-        otherCount -> 100 * fromIntegral doneCount / fromIntegral otherCount
-
-showStatus :: Status -> IO ()
-showStatus status =
-  case status of
-    Done -> do
-      setSGR [SetColor Foreground Vivid Green]
-      TIO.putStr "✔"
-    Pending -> do
-      setSGR [SetColor Foreground Vivid Magenta]
-      TIO.putStr "◻"
-    Progress -> do
-      setSGR [Reset]
-      TIO.putStr "…"
-    Cancelled -> do
-      setSGR [SetColor Foreground Vivid Red]
-      TIO.putStr "✖"
-
-showText :: Status -> T.Text -> IO ()
-showText status text =
-  case status of
-    Done -> do
-      setSGR [SetColor Foreground Vivid Black]
-      TIO.putStr text
-    Pending -> do
-      setSGR [Reset]
-      TIO.putStr text
-    Progress -> do
-      setSGR [Reset]
-      TIO.putStr text
-    Cancelled -> do
-      setSGR [SetColor Foreground Vivid Black]
-      TIO.putStr text
-
-showTaskGroups :: Tasks.Tasks -> RefMap -> Elapsed -> IO ()
-showTaskGroups tasks refs currentTime =
-  mapM_ showTaskGroup (Map.toList taskGroups)
-  where
-    taskGroups = groupByContext tasks
-    showTaskGroup (context, groupTasks) = do
-      showGroupHeader context groupTasks
-      showGroupBody groupTasks refs currentTime
-      spacer
-
-statusLabel :: Status -> T.Text
-statusLabel Pending = ":hourglass:"
-statusLabel Progress = ":spinner:"
-statusLabel Done = ":white_check_mark:"
-statusLabel Cancelled = ":x:"
-
-todayList :: Tasks -> RefMap -> T.Text -> IO ()
-todayList tasks refMap title =
-  case totalCount tasks of
-    0 -> showEmpty
-    _ -> taskLines title tasks
-  where
-    showEmpty = do
-      spacer
-      TIO.putStrLn (padLeft "No tasks available")
-      spacer
-    taskLines title tasks = do
-      spacer
-      TIO.putStrLn title
-      mapM_ taskLine tasks
-      spacer
-    taskLine task = do
-      TIO.putStr "• "
-      TIO.putStr (statusLabel (status task))
-      TIO.putStr " "
-      TIO.putStrLn (replaceRefs (text task) refMap)
-
-showOutForToday :: ContextFilter -> Taskfile.Taskfile -> IO ()
-showOutForToday contextFilter taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Out for today:*"
-  where
-    todayTask t = started t && inContext contextFilter t
-    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
-
-showToday :: ContextFilter -> Taskfile.Taskfile -> IO ()
-showToday contextFilter taskfile =
-  todayList todayTasks (Taskfile.refs taskfile) "*Today:*"
-  where
-    todayTask t = takenOver t && inContext contextFilter t
-    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
-
-showEmpty :: IO ()
-showEmpty = do
-  TIO.putStrLn (padLeft "No tasks in your list. Enjoy some free time!")
-  spacer
-  TIO.putStrLn (padLeft "You can add a new task with 't add Buy milk'")
-
-showTasks :: ContextFilter -> Taskfile.Taskfile -> Elapsed -> IO ()
-showTasks contextFilter taskfile currentTime = do
-  spacer
-  body
-  spacer
+taskList :: Tasks.ContextFilter -> Taskfile.Taskfile -> Elapsed -> Doc
+taskList contextFilter taskfile currentTime =
+  hardline <+> indent 1 content <+> hardline
   where
     contextTasks =
-      Map.filter (inContext contextFilter) (Taskfile.tasks taskfile)
-    body =
-      case totalCount contextTasks of
-        0 -> showEmpty
-        _ -> do
-          showTaskGroups contextTasks (Taskfile.refs taskfile) currentTime
-          showStats contextTasks
+      Map.filter (Tasks.inContext contextFilter) (Taskfile.tasks taskfile)
+    tg (c, ts) =
+      TaskGroup (Text.unpack c) ts currentTime (Taskfile.refs taskfile)
+    tgs = map tg $ Map.toList $ Tasks.groupByContext contextTasks
+    content = render $ TaskList tgs (Stats contextTasks)
 
-showRefs :: RefMap -> IO ()
-showRefs refMap =
-  case totalCount refMap of
-    0 -> do
-      spacer
-      TIO.putStrLn "No ref lookup rules setup in the current Taskfile"
-      spacer
-    _ -> do
-      spacer
-      mapM_ showRef (Map.toList refMap)
-      spacer
+today :: Tasks.ContextFilter -> Taskfile.Taskfile -> Doc
+today contextFilter taskfile =
+  render (Today Beginning todayTasks (Taskfile.refs taskfile))
   where
-    showRef (repo, repoPath) = do
-      TIO.putStr (padLeft repo)
-      TIO.putStr " -> "
-      TIO.putStrLn repoPath
+    todayTask t = Tasks.takenOver t && Tasks.inContext contextFilter t
+    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
 
-showError :: String -> IO ()
-showError err = do
-  setSGR [SetColor Foreground Vivid Red]
-  putStrLn err
-  setSGR [Reset]
+outForToday :: Tasks.ContextFilter -> Taskfile.Taskfile -> Doc
+outForToday contextFilter taskfile =
+  render (Today End todayTasks (Taskfile.refs taskfile))
+  where
+    todayTask t = Tasks.started t && Tasks.inContext contextFilter t
+    todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
+
+error :: String -> Doc
+error err = hardline <+> red (text err) <+> hardline
