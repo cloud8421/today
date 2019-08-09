@@ -64,24 +64,42 @@ remove = flip Map.delete
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
 
-updateTask :: (MonadError String m, MonadReader Elapsed m) => (Task -> Task) -> TaskId -> Tasks -> m Tasks
+updateTask ::
+     (MonadError String m, MonadReader Elapsed m)
+  => (Task -> Task)
+  -> TaskId
+  -> Tasks
+  -> m Tasks
 updateTask updateFn taskId tasks
   | taskId `member` tasks = do
-      currentTime <- ask
-      pure (Map.adjust (\t -> (updateFn t) { lastUpdate = currentTime }) taskId tasks)
+    currentTime <- ask
+    pure
+      (Map.adjust (\t -> (updateFn t) {lastUpdate = currentTime}) taskId tasks)
   | otherwise = throwError "Task not found"
 
-updateStatus :: (MonadError String m, MonadReader Elapsed m) => Status -> TaskId -> Tasks -> m Tasks
-updateStatus newStatus =
-  updateTask (\t -> t {status = newStatus})
+updateStatus ::
+     (MonadError String m, MonadReader Elapsed m)
+  => Status
+  -> TaskId
+  -> Tasks
+  -> m Tasks
+updateStatus newStatus = updateTask (\t -> t {status = newStatus})
 
-updateText :: (MonadError String m, MonadReader Elapsed m) => Text -> TaskId -> Tasks -> m Tasks
-updateText newText =
-  updateTask (\t -> t {text = newText})
+updateText ::
+     (MonadError String m, MonadReader Elapsed m)
+  => Text
+  -> TaskId
+  -> Tasks
+  -> m Tasks
+updateText newText = updateTask (\t -> t {text = newText})
 
-updateContext :: (MonadError String m, MonadReader Elapsed m) => Context -> TaskId -> Tasks -> m Tasks
-updateContext newContext =
-  updateTask (\t -> t {context = newContext})
+updateContext ::
+     (MonadError String m, MonadReader Elapsed m)
+  => Context
+  -> TaskId
+  -> Tasks
+  -> m Tasks
+updateContext newContext = updateTask (\t -> t {context = newContext})
 
 age :: Task -> Elapsed -> Seconds
 age task currentTime = timeDiff currentTime (lastUpdate task)
@@ -99,8 +117,9 @@ inContext (Exclude c) task = context task /= c
 
 defaultTasks :: Elapsed -> Tasks
 defaultTasks currentTime =
-  Map.fromList
-  $ zip [1..]
+  Map.fromList $
+  zip
+    [1 ..]
     [ Task Done "Install t" currentTime "inbox"
     , Task Pending "Learn how to use t" currentTime "inbox"
     , Task Pending "Finally fix issue T#2345" currentTime "work"
