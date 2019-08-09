@@ -285,11 +285,3 @@ executeCommand = do
 printError :: Either String () -> IO ()
 printError (Right _) = pure ()
 printError (Left err) = Ui.showError err
-
-------------------------------------------------------------
--- Arguably these should go in a file called `Options.Applicative.Extra`.
-------------------------------------------------------------
-maybeTextOption :: Mod OptionFields (Maybe Text) -> Parser (Maybe Text)
-maybeTextOption = option maybeText
-  where
-    maybeText = eitherReader (Right . Just . pack)
