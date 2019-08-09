@@ -274,9 +274,9 @@ executeCommand = do
   printError =<<
     runExceptT
       (do taskfile <- Taskfile.load resolvedTaskFilePath
-          newTaskfile <-
-            runReaderT (update (subCommand opts) taskfile) currentTime
-          runReaderT (view (subCommand opts) newTaskfile) currentTime)
+          runReaderT
+            (update (subCommand opts) taskfile >>= view (subCommand opts))
+            currentTime)
 
 printError :: Either String (IO ()) -> IO ()
 printError (Right v) = v
