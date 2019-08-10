@@ -252,15 +252,15 @@ update sc taskfile =
 view :: MonadReader Elapsed m => SubCommand -> Taskfile.Taskfile -> m Doc
 view sc taskfile = do
   currentTime <- ask
-  case sc of
-    Today contextFilter -> pure $ Ui.today contextFilter taskfile
-    OutForToday contextFilter -> pure $ Ui.outForToday contextFilter taskfile
-    AddRef _service _urlTemplate -> pure $ Ui.refList (Taskfile.refs taskfile)
-    DeleteRef _service -> pure $ Ui.refList (Taskfile.refs taskfile)
-    ListRefs -> pure $ Ui.refList (Taskfile.refs taskfile)
-    ListTasks contextFilter ->
-      pure $ Ui.taskList contextFilter taskfile currentTime
-    _ -> pure $ Ui.taskList Tasks.All taskfile currentTime
+  pure $
+    case sc of
+      Today contextFilter -> Ui.today contextFilter taskfile
+      OutForToday contextFilter -> Ui.outForToday contextFilter taskfile
+      AddRef _service _urlTemplate -> Ui.refList (Taskfile.refs taskfile)
+      DeleteRef _service -> Ui.refList (Taskfile.refs taskfile)
+      ListRefs -> Ui.refList (Taskfile.refs taskfile)
+      ListTasks contextFilter -> Ui.taskList contextFilter taskfile currentTime
+      _ -> Ui.taskList Tasks.All taskfile currentTime
 
 executeCommand :: IO ()
 executeCommand = do
