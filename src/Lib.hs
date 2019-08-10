@@ -5,12 +5,13 @@
 module Lib where
 
 import Control.Monad.Except (MonadError, runExceptT)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
 import qualified Help
 import Options.Applicative
+import Options.Applicative.Help.Pretty (Doc, putDoc)
 import qualified Refs
 import System.Hourglass (timeCurrent)
 import qualified Taskfile
@@ -26,7 +27,7 @@ data Opts =
 
 data SubCommand
   = AddTask Text [Text]
-  | ListTasks Ui.ContextFilter
+  | ListTasks Tasks.ContextFilter
   | DeleteTask Tasks.TaskId
   | CheckTask Tasks.TaskId
   | CancelTask Tasks.TaskId
@@ -35,8 +36,8 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
-  | Today Ui.ContextFilter
-  | OutForToday Ui.ContextFilter
+  | Today Tasks.ContextFilter
+  | OutForToday Tasks.ContextFilter
   | ListRefs
   | AddRef Refs.Service Refs.UrlTemplate
   | DeleteRef Refs.Service
@@ -87,21 +88,21 @@ taskContextOption =
     (long "context" <> short 'c' <> value Tasks.defaultContext <>
      help Help.contextFilter)
 
-contextFilterOption :: Parser Ui.ContextFilter
+contextFilterOption :: Parser Tasks.ContextFilter
 contextFilterOption = includeContextFilterOption <|> excludeContextFilterOption
   where
     includeContextFilterOption =
       option
         includeReader
-        (long "include-context" <> short 'i' <> value Ui.All <>
+        (long "include-context" <> short 'i' <> value Tasks.All <>
          help Help.includeContextFilter)
-    includeReader = eitherReader (Right . Ui.Include . pack)
+    includeReader = eitherReader (Right . Tasks.Include . pack)
     excludeContextFilterOption =
       option
         excludeReader
-        (long "exclude-context" <> short 'e' <> value Ui.All <>
+        (long "exclude-context" <> short 'e' <> value Tasks.All <>
          help Help.excludeContextFilter)
-    excludeReader = eitherReader (Right . Ui.Exclude . pack)
+    excludeReader = eitherReader (Right . Tasks.Exclude . pack)
 
 taskIdArgument :: Parser Int
 taskIdArgument = argument auto (help Help.taskId)
@@ -248,23 +249,18 @@ update sc taskfile =
         DeleteRef repo -> pure (Taskfile.updateRefs taskfile newRefs)
           where newRefs = Refs.removeRef repo currentRefs
 
-view ::
-     (MonadReader Elapsed m, MonadIO m)
-  => SubCommand
-  -> Taskfile.Taskfile
-  -> m ()
+view :: MonadReader Elapsed m => SubCommand -> Taskfile.Taskfile -> m Doc
 view sc taskfile = do
   currentTime <- ask
-  case sc of
-    Today contextFilter -> liftIO $ Ui.showToday contextFilter taskfile
-    OutForToday contextFilter ->
-      liftIO $ Ui.showOutForToday contextFilter taskfile
-    ListRefs -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
-    AddRef _repo _repoPath -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
-    DeleteRef _repo -> liftIO $ Ui.showRefs (Taskfile.refs taskfile)
-    ListTasks contextFilter ->
-      liftIO $ Ui.showTasks contextFilter taskfile currentTime
-    _ -> liftIO $ Ui.showTasks Ui.All taskfile currentTime
+  pure $
+    case sc of
+      Today contextFilter -> Ui.today contextFilter taskfile
+      OutForToday contextFilter -> Ui.outForToday contextFilter taskfile
+      AddRef _service _urlTemplate -> Ui.refList (Taskfile.refs taskfile)
+      DeleteRef _service -> Ui.refList (Taskfile.refs taskfile)
+      ListRefs -> Ui.refList (Taskfile.refs taskfile)
+      ListTasks contextFilter -> Ui.taskList contextFilter taskfile currentTime
+      _ -> Ui.taskList Tasks.All taskfile currentTime
 
 executeCommand :: IO ()
 executeCommand = do
@@ -275,21 +271,13 @@ executeCommand = do
   Taskfile.ensure
     resolvedTaskFilePath
     (Taskfile.new (Tasks.defaultTasks currentTime) Refs.defaultRefMap)
-  printError =<<
+  render =<<
     runExceptT
       (do taskfile <- Taskfile.load resolvedTaskFilePath
           runReaderT
             (update (subCommand opts) taskfile >>= view (subCommand opts))
             currentTime)
 
-printError :: Either String () -> IO ()
-printError (Right _) = pure ()
-printError (Left err) = Ui.showError err
-
-------------------------------------------------------------
--- Arguably these should go in a file called `Options.Applicative.Extra`.
-------------------------------------------------------------
-maybeTextOption :: Mod OptionFields (Maybe Text) -> Parser (Maybe Text)
-maybeTextOption = option maybeText
-  where
-    maybeText = eitherReader (Right . Just . pack)
+render :: Either String Doc -> IO ()
+render (Right doc) = putDoc doc
+render (Left err) = putDoc (Ui.error err)
