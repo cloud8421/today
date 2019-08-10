@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Ui where
 
 import qualified Data.Map.Strict as Map
@@ -59,12 +61,10 @@ class Render a where
   render :: a -> Doc
 
 instance Render RefItem where
-  render RefItem {service = s, urlTemplate = ut} =
-    text s <+> text "->" <+> text ut
+  render RefItem {service = s, urlTemplate = ut} = text s <+> "->" <+> text ut
 
 instance Render RefList where
-  render (RefList []) =
-    text "No refk lookup rules setup in the current Taskfile"
+  render (RefList []) = "No refk lookup rules setup in the current Taskfile"
   render (RefList someRefItems) = fillSep $ map render someRefItems
 
 instance Render Seconds where
@@ -80,16 +80,16 @@ instance Render Seconds where
         | otherwise = printf "%dd" (fromEnum (div s secondsInOneDay))
 
 instance Render StatusIcon where
-  render (StatusIcon Tasks.Done) = green $ text "✔ "
-  render (StatusIcon Tasks.Pending) = magenta $ text "◻ "
-  render (StatusIcon Tasks.Progress) = text "… "
-  render (StatusIcon Tasks.Cancelled) = red $ text "✖ "
+  render (StatusIcon Tasks.Done) = green "✔ "
+  render (StatusIcon Tasks.Pending) = magenta "◻ "
+  render (StatusIcon Tasks.Progress) = "… "
+  render (StatusIcon Tasks.Cancelled) = red "✖ "
 
 instance Render StatusLabel where
-  render (StatusLabel Tasks.Done) = text ":white_check_mark:"
-  render (StatusLabel Tasks.Pending) = text ":hourglass:"
-  render (StatusLabel Tasks.Progress) = text ":spinner:"
-  render (StatusLabel Tasks.Cancelled) = text ":x:"
+  render (StatusLabel Tasks.Done) = ":white_check_mark:"
+  render (StatusLabel Tasks.Pending) = ":hourglass:"
+  render (StatusLabel Tasks.Progress) = ":spinner:"
+  render (StatusLabel Tasks.Cancelled) = ":x:"
 
 instance Render TaskText where
   render (TaskText Tasks.Done taskText) = black $ text taskText
@@ -104,20 +104,20 @@ instance Render TaskRefs where
       someRefs -> hardline <+> vsep (map taskRefItem someRefs)
     where
       taskRefItem ref =
-        text "|" <+>
+        "|" <+>
         text (Text.unpack $ Refs.refId ref) <+>
-        text ":" <+> text (Text.unpack $ Refs.resolveRef ref refMap)
+        ":" <+> text (Text.unpack $ Refs.resolveRef ref refMap)
 
 instance Render Stats where
   render (Stats tasks) =
     black (text (printf "%0.f%% of all tasks complete." percentDone)) <$$>
     green (text (printf "%d" doneCount)) <+>
-    black (text "done ·") <+>
+    black "done ·" <+>
     text (printf "%d" progressCount) <+>
-    black (text "in progress ·") <+>
+    black "in progress ·" <+>
     magenta (text (printf "%d" pendingCount)) <+>
-    black (text "pending ·") <+>
-    red (text (printf "%d" cancelledCount)) <+> black (text "cancelled")
+    black "pending ·" <+>
+    red (text (printf "%d" cancelledCount)) <+> black "cancelled"
     where
       doneCount = Tasks.countByStatus Tasks.Done tasks
       progressCount = Tasks.countByStatus Tasks.Progress tasks
@@ -162,21 +162,21 @@ instance Render TaskGroup where
 
 instance Render TaskList where
   render (TaskList [] _stats) =
-    text "No tasks in your list. Enjoy some free time!" <+>
-    hardline <+> text "You can add a new task with 't add Buy milk'"
+    "No tasks in your list. Enjoy some free time!" <+>
+    hardline <+> "You can add a new task with 't add Buy milk'"
   render (TaskList tgs tls) = vsep (map render tgs) <$$> render tls
 
 instance Render TodayScope where
-  render Beginning = text "*Today:*"
-  render End = text "*Out for today:*"
+  render Beginning = "*Today:*"
+  render End = "*Out for today:*"
 
 instance Render Today where
   render (Today scope tasks refMap)
-    | Map.null tasks = text "No tasks available"
+    | Map.null tasks = "No tasks available"
     | otherwise = render scope <$$> vsep (map todayLine (Map.toList tasks))
     where
       todayLine (_id, t) =
-        text "•" <+>
+        "•" <+>
         render (StatusLabel (Tasks.status t)) <+>
         text (Text.unpack $ Refs.replaceRefs (Tasks.text t) refMap)
 
