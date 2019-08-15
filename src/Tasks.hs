@@ -120,9 +120,9 @@ defaultTasks currentTime =
   Map.fromList $
   zip
     [1 ..]
-    [ Task Done "Install t" currentTime "inbox"
-    , Task Pending "Learn how to use t" currentTime "inbox"
-    , Task Pending "Finally fix issue T#2345" currentTime "work"
+    [ Task Done "Install today" currentTime "inbox"
+    , Task Pending "Learn how to use today" currentTime "inbox"
+    , Task Pending "Finally fix issue TODAY#2345" currentTime "work"
     ]
 
 totalCount :: Map k v -> Int

@@ -1,6 +1,6 @@
-name:                t
+name:                today
 version:             0.1.0.0
-github:              "cloud8421/t"
+github:              "cloud8421/today"
 license:             BSD3
 author:              "Claudio Ortolina"
 maintainer:          "cloud8421@gmail.com"
@@ -16,7 +16,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/cloud8421/t#readme>
+description:         Please see the README on GitHub at <https://github.com/cloud8421/today#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -49,7 +49,7 @@ library:
   source-dirs: src
 
 executables:
-  t:
+  today:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -57,10 +57,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - t
+    - today
 
 tests:
-  t-test:
+  today-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -69,4 +69,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hspec
-    - t
+    - today

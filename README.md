@@ -1,17 +1,17 @@
-# T - CLI Task Manager
+# Today - CLI Task Manager
 
-[![CircleCI](https://circleci.com/gh/cloud8421/t.svg?style=svg&circle-token=b6247f7bf94460ff15e6b85ba4abbf19cfe62f70)](https://circleci.com/gh/cloud8421/t)
+[![CircleCI](https://circleci.com/gh/cloud8421/today.svg?style=svg&circle-token=b6247f7bf94460ff15e6b85ba4abbf19cfe62f70)](https://circleci.com/gh/cloud8421/today)
 
 Efficiently manage tasks from the command line.
 
 ```
   @inbox [1/2]
-    1. ✔  Install t 2d
-    2. ◻  Learn how to use t 2d
+    1. ✔  Install today 2d
+    2. ◻  Learn how to use today 2d
 
   @work [0/1]
-    3. ◻  Finally fix issue T#2345 2d
-          | T#2345: https://github.com/cloud8421/t/issues/2345
+    3. ◻  Finally fix issue TODAY#2345 2d
+          | TODAY#2345: https://github.com/cloud8421/today/issues/2345
 
   33% of all tasks complete.
   1 done · 0 in progress · 2 pending · 0 cancelled
@@ -21,36 +21,36 @@ Efficiently manage tasks from the command line.
 
 ## Usage
 
-T is a command line task manager that heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
+Today is a command line task manager that heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
 
 Features:
 
 - Manage tasks and associate them to a specific context.
 - Tasks can be marked as cancelled and subsequently deleted.
 - Support shorthand references in the task description that get automatically expanded according to URL templates.
-- A `today` command which outputs the list of pending/in-progress tasks to a format that can be pasted to Slack.
+- Two commands, `in` and `out`, which output the list of tasks to a format that can be pasted to Slack.
 - All data written to a single file, which can be put in Dropbox etc.
 
 ## Example flow
 
-1. You can start with `t list` to see the default content.
-2. Add a task with `t add "Email triage"`.
-3. Add a task in a specific context with `t add --context "Find a solution for issue T#2313"`. Note the `T#2313` reference to service `T` with identifier `2313`, which identifies an issue with that number in this very repo.
-4. Add a reference rule for `T#2313`, so that it gets expanded automatically (only needed once per Taskfile) `t set-ref T "https://github.com/cloud8421/t/$id`. Always make sure that you add the `$id` fragment to signal where you want interpolation to happen.
-5. Run `t list` and see the expanded reference below the task.
-6. Run `t today` for a today message you can paste wherever you like (references are already expanded).
-7. Start a task: `t start 2`
-8. Finish a task: `t check 2`
-9. Rinse and repeat. At the end of the day, run `t out-for-today` for a end of the day message you can paste again wherever you like.
-10. Run `t clear` to remove all done and cancelled tasks.
+1. You can start with `today list` to see the default content.
+2. Add a task with `today add "Email triage"`.
+3. Add a task in a specific context with `today add --context "Find a solution for issue TODAY#2313"`. Note the `TODAY#2313` reference to service `TODAY` with identifier `2313`, which identifies an issue with that number in this very repo.
+4. Add a reference rule for `TODAY#2313`, so that it gets expanded automatically (only needed once per Taskfile) `today set-ref TODAY "https://github.com/cloud8421/today/$id`. Always make sure that you add the `$id` fragment to signal where you want interpolation to happen.
+5. Run `today list` and see the expanded reference below the task.
+6. Run `today in` for a today message you can paste wherever you like (references are already expanded).
+7. Start a task: `today start 2`
+8. Finish a task: `today check 2`
+9. Rinse and repeat. At the end of the day, run `today out` for a end of the day message you can paste again wherever you like.
+10. Run `today clear` to remove all done and cancelled tasks.
 
 ## Command reference
 
 ```
-T - CLI Task Manager : Efficiently manage tasks from the command line
+TODAY - CLI Task Manager : Efficiently manage tasks from the command line
 
-Usage: t [-f|--taskfile TASKFILE] COMMAND
-  T - CLI Task Manager
+Usage: today [-f|--taskfile TASKFILE] COMMAND
+  TODAY - CLI Task Manager
 
 Available options:
   -h,--help                Show this help text
@@ -91,7 +91,7 @@ Refs management:
 
 ## Development
 
-T is written in Haskell and requires [stack](https://www.haskellstack.org).
+Today is written in Haskell and requires [stack](https://www.haskellstack.org).
 
 It supports all standard `stack` commands, e.g. `test`, `run`, `build` or `install`.
 

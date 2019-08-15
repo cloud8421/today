@@ -1,5 +1,5 @@
 .stack-work/
-t.cabal
+today.cabal
 *~
 tasks.json
 .envrc

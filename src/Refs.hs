@@ -32,7 +32,7 @@ type RefMap = Map Service UrlTemplate
 
 defaultRefMap :: RefMap
 defaultRefMap =
-  Map.fromList [("T", "https://github.com/cloud8421/t/issues/$id")]
+  Map.fromList [("TODAY", "https://github.com/cloud8421/today/issues/$id")]
 
 resolveRef :: Ref -> RefMap -> Text
 resolveRef ref refMap =

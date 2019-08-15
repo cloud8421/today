@@ -1,7 +1,7 @@
 module Help where
 
 progDesc :: String
-progDesc = "T - CLI Task Manager"
+progDesc = "TODAY - CLI Task Manager"
 
 progHeader :: String
 progHeader =
@@ -35,7 +35,7 @@ addTask =
 
 taskText :: String
 taskText =
-  "The text of the task. Use double quotes for special characters. Can include references in the shape of SERVICE#IDENTIFIER, e.g. T#123."
+  "The text of the task. Use double quotes for special characters. Can include references in the shape of SERVICE#IDENTIFIER, e.g. TODAY#123."
 
 taskId :: String
 taskId = "The ID of the task the action should be applied on."
