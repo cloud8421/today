@@ -26,6 +26,7 @@ dependencies:
 - directory
 - either
 - extra
+- formatting
 - hourglass
 - hourglass-orphans
 - template

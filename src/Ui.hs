@@ -5,11 +5,11 @@ module Ui where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sort as Sort
 import qualified Data.Text as Text
+import qualified Format
 import Options.Applicative.Help.Pretty
 import qualified Refs
 import qualified Taskfile
 import qualified Tasks
-import Text.Printf
 import Time.Types (Elapsed, Seconds)
 
 data RefItem =
@@ -74,10 +74,10 @@ instance Render Seconds where
       secondsInOneDay = secondsInOneHour * 24
       humanDuration s
         | s < 60 = show s
-        | s >= 60 && s < secondsInOneHour = printf "%dm" (fromEnum (div s 60))
+        | s >= 60 && s < secondsInOneHour = Format.minute (fromEnum (div s 60))
         | s >= secondsInOneHour && s < secondsInOneDay =
-          printf "%dh" (fromEnum (div s secondsInOneHour))
-        | otherwise = printf "%dd" (fromEnum (div s secondsInOneDay))
+          Format.hour (fromEnum (div s secondsInOneHour))
+        | otherwise = Format.day (fromEnum (div s secondsInOneDay))
 
 instance Render StatusIcon where
   render (StatusIcon Tasks.Done) = green "✔ "
@@ -110,14 +110,14 @@ instance Render TaskRefs where
 
 instance Render Stats where
   render (Stats tasks) =
-    black (text (printf "%0.f%% of all tasks complete." percentDone)) <$$>
-    green (text (printf "%d" doneCount)) <+>
+    black (text (Format.taskPercentDone percentDone)) <$$>
+    green (text (Format.groupCount doneCount)) <+>
     black "done ·" <+>
-    text (printf "%d" progressCount) <+>
+    text (Format.groupCount progressCount) <+>
     black "in progress ·" <+>
-    magenta (text (printf "%d" pendingCount)) <+>
+    magenta (text (Format.groupCount pendingCount)) <+>
     black "pending ·" <+>
-    red (text (printf "%d" cancelledCount)) <+> black "cancelled"
+    red (text (Format.groupCount cancelledCount)) <+> black "cancelled"
     where
       doneCount = Tasks.countByStatus Tasks.Done tasks
       progressCount = Tasks.countByStatus Tasks.Progress tasks
@@ -141,8 +141,7 @@ instance Render TaskGroup where
       groupCount =
         black $
         text $
-        printf
-          "[%d/%d]"
+        Format.groupCountOverTotal
           (Tasks.countByStatus Tasks.Done gts)
           (Tasks.totalCount gts)
       orderedTasks =
@@ -155,7 +154,7 @@ instance Render TaskGroup where
               render (TaskText taskStatus (Text.unpack taskText)) <+>
               render (Tasks.age task currentTime)
          in black $
-            text (printf "%3d." taskId) <+>
+            text (Format.paddedTaskId taskId) <+>
             render (StatusIcon taskStatus) <+>
             align (taskAndAge <> render (TaskRefs task refMap))
       groupTaskList = vsep $ map taskItem orderedTasks

@@ -11,7 +11,7 @@ import Data.Map.Strict (Map)
 import Data.Text as T
 import qualified Data.Text.Lazy as LZ
 import qualified Data.Text.Template as TPL
-import Text.Printf
+import qualified Format
 import Text.Regex.PCRE
 
 type Service = Text
@@ -75,8 +75,7 @@ setRef :: MonadError String m => Service -> UrlTemplate -> RefMap -> m RefMap
 setRef refService urlTemplate refMap =
   case TPL.templateSafe urlTemplate of
     Right _template -> pure (Map.insert refService urlTemplate refMap)
-    Left (row, col) ->
-      throwError (printf "Template error at position %d, %d" row col)
+    Left (row, col) -> throwError (Format.templateError row col)
 
 removeRef :: Service -> RefMap -> RefMap
 removeRef = Map.delete
