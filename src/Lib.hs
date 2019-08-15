@@ -36,7 +36,7 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
-  | Today Tasks.ContextFilter
+  | InForToday Tasks.ContextFilter
   | OutForToday Tasks.ContextFilter
   | ListRefs
   | AddRef Refs.Service Refs.UrlTemplate
@@ -67,7 +67,7 @@ taskManagementCommands =
 
 reporterCommands :: Mod CommandFields SubCommand
 reporterCommands =
-  commandGroup "Reporters:" <> hidden <> todayCommand <> outForTodayCommand
+  commandGroup "Reporters:" <> hidden <> inForTodayCommand <> outForTodayCommand
 
 refManagementCommands :: Mod CommandFields SubCommand
 refManagementCommands =
@@ -171,15 +171,15 @@ moveTaskOptions =
 clearCommand :: Mod CommandFields SubCommand
 clearCommand = command "clear" (info (pure Clear) (progDesc Help.clearTasks))
 
-todayCommand :: Mod CommandFields SubCommand
-todayCommand = command "today" (info todayOptions (progDesc Help.today))
-
-todayOptions :: Parser SubCommand
-todayOptions = Today <$> contextFilterOption
+inForTodayCommand :: Mod CommandFields SubCommand
+inForTodayCommand = command "in" (info opts (progDesc Help.inForToday))
+  where
+    opts :: Parser SubCommand
+    opts = InForToday <$> contextFilterOption
 
 outForTodayCommand :: Mod CommandFields SubCommand
 outForTodayCommand =
-  command "out-for-today" (info outForTodayOptions (progDesc Help.outForToday))
+  command "out" (info outForTodayOptions (progDesc Help.outForToday))
   where
     outForTodayOptions :: Parser SubCommand
     outForTodayOptions = OutForToday <$> contextFilterOption
@@ -240,7 +240,7 @@ update sc taskfile =
           Tasks.updateContext context taskId currentTasks
         Clear -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
-        Today _maybeContext -> pure taskfile
+        InForToday _maybeContext -> pure taskfile
         OutForToday _maybeContext -> pure taskfile
         ListRefs -> pure taskfile
         AddRef service urlTemplate ->
@@ -254,7 +254,7 @@ view sc taskfile = do
   currentTime <- ask
   pure $
     case sc of
-      Today contextFilter -> Ui.today contextFilter taskfile
+      InForToday contextFilter -> Ui.today contextFilter taskfile
       OutForToday contextFilter -> Ui.outForToday contextFilter taskfile
       AddRef _service _urlTemplate -> Ui.refList (Taskfile.refs taskfile)
       DeleteRef _service -> Ui.refList (Taskfile.refs taskfile)

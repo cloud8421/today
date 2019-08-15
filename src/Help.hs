@@ -65,8 +65,8 @@ clearTasks :: String
 clearTasks =
   "Clear all done and cancelled tasks, permanently deleting them from the Taskfile."
 
-today :: String
-today =
+inForToday :: String
+inForToday =
   "Generate a today message summary, including all pending and in progress tasks. Can filter by context with --include-context/-i or --exclude-context/-e)."
 
 outForToday :: String
