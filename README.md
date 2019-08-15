@@ -89,6 +89,21 @@ Refs management:
   delete-ref               Delete an existing ref replacement rule by its repo.
 ```
 
+## Autocompletion
+
+Today can generate autocompletion functions for Bash, ZSH and Fish shells by passing the appropriate flag.
+
+```
+# Bash
+source <(today --bash-completion-script `which today`)
+
+# ZSH
+source <(today --zsh-completion-script `which today`)
+
+# Fish
+today --fish-completion-script (which today) | source
+```
+
 ## Development
 
 Today is written in Haskell and requires [stack](https://www.haskellstack.org).
