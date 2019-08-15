@@ -82,12 +82,6 @@ taskFilePathOption =
      showDefault <>
      help Help.taskfile)
 
-taskContextOption :: Parser Text
-taskContextOption =
-  strOption
-    (long "context" <> short 'c' <> value Tasks.defaultContext <>
-     help Help.contextFilter)
-
 contextFilterOption :: Parser Tasks.ContextFilter
 contextFilterOption = includeContextFilterOption <|> excludeContextFilterOption
   where
@@ -108,65 +102,65 @@ taskIdArgument :: Parser Int
 taskIdArgument = argument auto (help Help.taskId)
 
 listTasksCommand :: Mod CommandFields SubCommand
-listTasksCommand =
-  command "list" (info listTasksOptions (progDesc Help.listTasks))
-
-listTasksOptions :: Parser SubCommand
-listTasksOptions = ListTasks <$> contextFilterOption
+listTasksCommand = command "list" (info opts (progDesc Help.listTasks))
+  where
+    opts :: Parser SubCommand
+    opts = ListTasks <$> contextFilterOption
 
 addTaskCommand :: Mod CommandFields SubCommand
-addTaskCommand = command "add" (info addOptions (progDesc Help.addTask))
-
-addOptions :: Parser SubCommand
-addOptions =
-  AddTask <$> taskContextOption <*> many (strArgument (help Help.taskText))
+addTaskCommand = command "add" (info opts (progDesc Help.addTask))
+  where
+    opts :: Parser SubCommand
+    opts =
+      AddTask <$> taskContextOption <*> many (strArgument (help Help.taskText))
+      where
+        taskContextOption :: Parser Text
+        taskContextOption =
+          strOption
+            (long "context" <> short 'c' <> value Tasks.defaultContext <>
+             help Help.contextFilter)
 
 deleteTaskCommand :: Mod CommandFields SubCommand
-deleteTaskCommand =
-  command "delete" (info deleteOptions (progDesc Help.deleteTask))
-
-deleteOptions :: Parser SubCommand
-deleteOptions = DeleteTask <$> taskIdArgument
+deleteTaskCommand = command "delete" (info opts (progDesc Help.deleteTask))
+  where
+    opts :: Parser SubCommand
+    opts = DeleteTask <$> taskIdArgument
 
 checkTaskCommand :: Mod CommandFields SubCommand
-checkTaskCommand = command "check" (info checkOptions (progDesc Help.checkTask))
-
-checkOptions :: Parser SubCommand
-checkOptions = CheckTask <$> taskIdArgument
+checkTaskCommand = command "check" (info opts (progDesc Help.checkTask))
+  where
+    opts :: Parser SubCommand
+    opts = CheckTask <$> taskIdArgument
 
 cancelTaskCommand :: Mod CommandFields SubCommand
-cancelTaskCommand =
-  command "cancel" (info cancelOptions (progDesc Help.cancelTask))
-
-cancelOptions :: Parser SubCommand
-cancelOptions = CancelTask <$> taskIdArgument
+cancelTaskCommand = command "cancel" (info opts (progDesc Help.cancelTask))
+  where
+    opts :: Parser SubCommand
+    opts = CancelTask <$> taskIdArgument
 
 startTaskCommand :: Mod CommandFields SubCommand
-startTaskCommand = command "start" (info startOptions (progDesc Help.startTask))
-
-startOptions :: Parser SubCommand
-startOptions = StartTask <$> taskIdArgument
+startTaskCommand = command "start" (info opts (progDesc Help.startTask))
+  where
+    opts :: Parser SubCommand
+    opts = StartTask <$> taskIdArgument
 
 pauseTaskCommand :: Mod CommandFields SubCommand
-pauseTaskCommand = command "pause" (info pauseOptions (progDesc Help.pauseTask))
-
-pauseOptions :: Parser SubCommand
-pauseOptions = PauseTask <$> taskIdArgument
+pauseTaskCommand = command "pause" (info opts (progDesc Help.pauseTask))
+  where
+    opts :: Parser SubCommand
+    opts = PauseTask <$> taskIdArgument
 
 updateTaskTextCommand :: Mod CommandFields SubCommand
-updateTaskTextCommand =
-  command "update" (info updateTextOptions (progDesc Help.updateTask))
-
-updateTextOptions :: Parser SubCommand
-updateTextOptions =
-  Update <$> taskIdArgument <*> many (strArgument (help Help.taskText))
+updateTaskTextCommand = command "update" (info opts (progDesc Help.updateTask))
+  where
+    opts :: Parser SubCommand
+    opts = Update <$> taskIdArgument <*> many (strArgument (help Help.taskText))
 
 moveTaskCommand :: Mod CommandFields SubCommand
-moveTaskCommand = command "move" (info moveTaskOptions (progDesc Help.moveTask))
-
-moveTaskOptions :: Parser SubCommand
-moveTaskOptions =
-  Move <$> taskIdArgument <*> strArgument (help Help.contextMove)
+moveTaskCommand = command "move" (info opts (progDesc Help.moveTask))
+  where
+    opts :: Parser SubCommand
+    opts = Move <$> taskIdArgument <*> strArgument (help Help.contextMove)
 
 clearCommand :: Mod CommandFields SubCommand
 clearCommand = command "clear" (info (pure Clear) (progDesc Help.clearTasks))
@@ -188,19 +182,18 @@ listRefsCommand :: Mod CommandFields SubCommand
 listRefsCommand = command "refs" (info (pure ListRefs) (progDesc Help.listRefs))
 
 addRefCommand :: Mod CommandFields SubCommand
-addRefCommand = command "set-ref" (info addRefOptions (progDesc Help.addRef))
-
-addRefOptions :: Parser SubCommand
-addRefOptions =
-  AddRef <$> strArgument (help Help.refService) <*>
-  strArgument (help Help.refUrlTemplate)
+addRefCommand = command "set-ref" (info opts (progDesc Help.addRef))
+  where
+    opts :: Parser SubCommand
+    opts =
+      AddRef <$> strArgument (help Help.refService) <*>
+      strArgument (help Help.refUrlTemplate)
 
 deleteRefCommand :: Mod CommandFields SubCommand
-deleteRefCommand =
-  command "delete-ref" (info deleteRefOptions (progDesc Help.deleteRef))
-
-deleteRefOptions :: Parser SubCommand
-deleteRefOptions = DeleteRef <$> strArgument (help Help.refRepoAction)
+deleteRefCommand = command "delete-ref" (info opts (progDesc Help.deleteRef))
+  where
+    opts :: Parser SubCommand
+    opts = DeleteRef <$> strArgument (help Help.refRepoAction)
 
 update ::
      (MonadError String m, MonadReader Elapsed m)
