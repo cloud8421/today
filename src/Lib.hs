@@ -267,9 +267,10 @@ executeCommand = do
   render =<<
     runExceptT
       (do taskfile <- Taskfile.load resolvedTaskFilePath
-          runReaderT
-            (update (subCommand opts) taskfile >>= view (subCommand opts))
-            currentTime)
+          newTaskfile <-
+            runReaderT (update (subCommand opts) taskfile) currentTime
+          liftIO $ Taskfile.create resolvedTaskFilePath newTaskfile
+          runReaderT (view (subCommand opts) newTaskfile) currentTime)
 
 render :: Either String Doc -> IO ()
 render (Right doc) = putDoc doc
