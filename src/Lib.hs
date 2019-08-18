@@ -20,10 +20,7 @@ import Time.Types (Elapsed)
 import qualified Ui
 
 data Opts =
-  Opts
-    { taskFilePath :: FilePath
-    , subCommand :: SubCommand
-    }
+  Opts FilePath SubCommand
 
 data SubCommand
   = AddTask Text [Text]
@@ -257,20 +254,19 @@ view sc taskfile = do
 
 executeCommand :: IO ()
 executeCommand = do
-  (opts :: Opts) <-
+  Opts taskFilePath subCommand <-
     customExecParser (prefs $ disambiguate <> showHelpOnEmpty) optsParser
   currentTime <- liftIO timeCurrent
-  resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv (taskFilePath opts)
-  Taskfile.ensure
-    resolvedTaskFilePath
-    (Taskfile.new (Tasks.defaultTasks currentTime) Refs.defaultRefMap)
+  resolvedTaskFilePath <- liftIO $ Taskfile.resolveFromEnv taskFilePath
+  Taskfile.ensure resolvedTaskFilePath (defaultTaskfile currentTime)
   render =<<
     runExceptT
       (do taskfile <- Taskfile.load resolvedTaskFilePath
-          newTaskfile <-
-            runReaderT (update (subCommand opts) taskfile) currentTime
+          newTaskfile <- runReaderT (update subCommand taskfile) currentTime
           liftIO $ Taskfile.create resolvedTaskFilePath newTaskfile
-          runReaderT (view (subCommand opts) newTaskfile) currentTime)
+          runReaderT (view subCommand newTaskfile) currentTime)
+  where
+    defaultTaskfile ct = Taskfile.new (Tasks.defaultTasks ct) Refs.defaultRefMap
 
 render :: Either String Doc -> IO ()
 render (Right doc) = putDoc doc
