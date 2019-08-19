@@ -44,6 +44,12 @@ Features:
 9. Rinse and repeat. At the end of the day, run `today out` for a end of the day message you can paste again wherever you like.
 10. Run `today clear` to remove all done and cancelled tasks.
 
+## Managing the taskfile
+
+As Today saves data in a single file, you can keep that in Dropbox or under version control.
+
+By default, Today searches for a `tasks.json` file in the current directory, creating one if necessary. You can override this behaviour by passing a `-f|--taskfile` flag with the path you want to use or by setting a `TASKFILE` environment variable.
+
 ## Command reference
 
 ```
