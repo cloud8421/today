@@ -8,8 +8,8 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - t-v2-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
-            - t-v2-{{ checksum "stack.yaml" }}
+            - today-v2-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+            - today-v2-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
           command: stack --no-terminal setup
@@ -21,11 +21,11 @@ jobs:
           command: stack --no-terminal install
       - save_cache:
           name: Cache Dependencies
-          key: t-v2-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+          key: today-v2-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
       - store_artifacts:
-          path: ~/.local/bin/t
-          destination: t
+          path: ~/.local/bin/today
+          destination: today
 
