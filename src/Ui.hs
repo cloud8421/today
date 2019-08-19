@@ -13,30 +13,21 @@ import qualified Tasks
 import Time.Types (Elapsed, Seconds)
 
 data RefItem =
-  RefItem
-    { service :: String
-    , urlTemplate :: String
-    }
+  RefItem Refs.Service Refs.UrlTemplate
 
 newtype RefList =
   RefList [RefItem]
 
+type GroupName = String
+
 data TaskGroup =
-  TaskGroup
-    { groupName :: String
-    , groupTasks :: Tasks.Tasks
-    , ct :: Elapsed
-    , rm :: Refs.RefMap
-    }
+  TaskGroup GroupName Tasks.Tasks Elapsed Refs.RefMap
 
 newtype Stats =
   Stats Tasks.Tasks
 
 data TaskList =
-  TaskList
-    { taskGroups :: [TaskGroup]
-    , stats :: Stats
-    }
+  TaskList [TaskGroup] Stats
 
 data TodayScope
   = Beginning
@@ -61,7 +52,8 @@ class Render a where
   render :: a -> Doc
 
 instance Render RefItem where
-  render RefItem {service = s, urlTemplate = ut} = text s <+> "->" <+> text ut
+  render (RefItem service urlTemplate) =
+    text (Text.unpack service) <+> "->" <+> text (Text.unpack urlTemplate)
 
 instance Render RefList where
   render (RefList []) = "No refk lookup rules setup in the current Taskfile"
@@ -130,24 +122,20 @@ instance Render Stats where
           otherCount -> 100 * fromIntegral doneCount / fromIntegral otherCount
 
 instance Render TaskGroup where
-  render TaskGroup { groupName = gn
-                   , groupTasks = gts
-                   , ct = currentTime
-                   , rm = refMap
-                   } =
+  render (TaskGroup groupName groupTasks currentTime refMap) =
     prefixedGroupName <+> groupCount <$$> groupTaskList <+> hardline
     where
-      prefixedGroupName = underline $ text $ "@" ++ gn
+      prefixedGroupName = underline $ text $ "@" ++ groupName
       groupCount =
         black $
         text $
         Format.groupCountOverTotal
-          (Tasks.countByStatus Tasks.Done gts)
-          (Tasks.totalCount gts)
+          (Tasks.countByStatus Tasks.Done groupTasks)
+          (Tasks.totalCount groupTasks)
       orderedTasks =
         Sort.sortOn
           (\(_taskId, task) -> -Tasks.lastUpdate task)
-          (Map.toList gts)
+          (Map.toList groupTasks)
       taskItem (taskId, task) =
         let Tasks.Task {Tasks.status = taskStatus, Tasks.text = taskText} = task
             taskAndAge =
@@ -182,8 +170,7 @@ instance Render Today where
 refList :: Refs.RefMap -> Doc
 refList refMap = hardline <+> indent 1 content <+> hardline
   where
-    content = render $ RefList $ map toRefItem (Map.toList refMap)
-    toRefItem (s, ut) = RefItem (Text.unpack s) (Text.unpack ut)
+    content = render $ RefList $ map (uncurry RefItem) (Map.toList refMap)
 
 taskList :: Tasks.ContextFilter -> Taskfile.Taskfile -> Elapsed -> Doc
 taskList contextFilter taskfile currentTime =
