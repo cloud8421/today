@@ -47,9 +47,9 @@ extractRefs text = L.map builder matches
     result = unpack text =~ refMatcher
     rawMatches = getAllTextMatches result
     matches = L.map pack rawMatches
-    builder m =
-      let [repo, issueNo] = splitOn "#" m
-       in Ref repo issueNo m
+    builder m = Ref repo issueNo m
+      where
+        (repo, issueNo) = breakOn "#" m
 
 replaceRefs :: Text -> RefMap -> Text
 replaceRefs text refMap = L.foldl expandRef text (extractRefs text)
