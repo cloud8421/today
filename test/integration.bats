@@ -11,7 +11,7 @@ teardown() {
   popd || exit
 }
 
-@test "it creates a default taskfile" {
+@test "use the default taskfile" {
   run "$TODAY" list
   [ "$status" -eq 0 ]
 
@@ -19,7 +19,7 @@ teardown() {
   [ "$taskfile" = "tasks.json" ]
 }
 
-@test "it supports setting a taskfile via a flag" {
+@test "use a custom taskfile via a flag" {
   run "$TODAY" -f flag.json list
   [ "$status" -eq 0 ]
 
@@ -27,7 +27,7 @@ teardown() {
   [ "$taskfile" = "flag.json" ]
 }
 
-@test "it supports setting a taskfile via an environment variable" {
+@test "use a custom taskfile via an environment variable" {
   TASKFILE=env-variable.json run "$TODAY" list
   [ "$status" -eq 0 ]
 
@@ -35,7 +35,7 @@ teardown() {
   [ "$taskfile" = "env-variable.json" ]
 }
 
-@test "it adds a task in a context" {
+@test "add a task, browse tasks in contexts" {
   run "$TODAY" add --context work "Do something"
   [ "$status" -eq 0 ]
 
@@ -44,4 +44,25 @@ teardown() {
 
   run "$TODAY" list --exclude-context work
   [[ ! "$output" =~ "Do something" ]]
+}
+
+@test "add a task, generate a today in message" {
+  run "$TODAY" add --context work "Do something"
+  [ "$status" -eq 0 ]
+
+  run "$TODAY" in --include-context work
+  [[ "$output" =~ ":hourglass: Do something" ]]
+}
+
+@test "add a task, complete it and generate a today out message" {
+  run "$TODAY" add --context work "Do something"
+  [ "$status" -eq 0 ]
+
+  taskId="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+
+  run "$TODAY" check "$taskId"
+  [ "$status" -eq 0 ]
+
+  run "$TODAY" out --include-context work
+  [[ "$output" =~ ":white_check_mark: Do something" ]]
 }
