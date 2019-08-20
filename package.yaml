@@ -32,7 +32,8 @@ dependencies:
 - template
 - safe
 - optparse-applicative
-- regex-pcre
+- regex-tdfa
+- regex-tdfa-text
 - sort
 - text
 - time

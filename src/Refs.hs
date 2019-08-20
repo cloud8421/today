@@ -12,7 +12,8 @@ import Data.Text as T
 import qualified Data.Text.Lazy as LZ
 import qualified Data.Text.Template as TPL
 import qualified Format
-import Text.Regex.PCRE
+import Text.Regex.TDFA
+import Text.Regex.TDFA.Text ()
 
 type Service = Text
 
@@ -61,7 +62,7 @@ replaceRefs text refMap = L.foldl expandRef text (extractRefs text)
         Nothing -> t
 
 refMatcher :: String
-refMatcher = "(\\w*#\\d+)"
+refMatcher = "[A-Z]+#[0-9A-Za-z]+"
 
 buildRefUrl :: Ref -> UrlTemplate -> Text
 buildRefUrl ref urlTemplate =
