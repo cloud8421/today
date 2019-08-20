@@ -25,9 +25,6 @@ jobs:
           paths:
             - "/root/.stack"
             - ".stack-work"
-      - store_artifacts:
-          path: ~/.local/bin/today
-          destination: today
       - persist_to_workspace:
           root: ~/.local
           paths: bin
@@ -47,6 +44,9 @@ jobs:
       - run:
           name: Integration tests
           command: bats test/
+      - store_artifacts:
+          path: ~/.local/bin/today
+          destination: today
 workflows:
   version: 2
   build_and_test:
