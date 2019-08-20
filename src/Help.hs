@@ -40,11 +40,11 @@ taskText =
 taskId :: String
 taskId = "The ID of the task the action should be applied on."
 
-deleteTask :: String
-deleteTask = "Deletes an existing task by its ID."
+removeTask :: String
+removeTask = "Removes an existing task by its ID."
 
-checkTask :: String
-checkTask = "Check an existing task by its ID, marking it as done."
+finishTask :: String
+finishTask = "Finishes a existing task by its ID, marking it as done."
 
 cancelTask :: String
 cancelTask = "Cancel an existing task by its ID."

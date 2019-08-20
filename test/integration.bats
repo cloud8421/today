@@ -46,6 +46,18 @@ teardown() {
   [[ ! "$output" =~ "Do something" ]]
 }
 
+@test "add a task, remove a task" {
+  run "$TODAY" add --context work "Do something"
+  [ "$status" -eq 0 ]
+
+  taskId="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+
+  run "$TODAY" remove "$taskId"
+
+  run "$TODAY" list
+  [[ ! "$output" =~ "Do something" ]]
+}
+
 @test "add a task, generate a today in message" {
   run "$TODAY" add --context work "Do something"
   [ "$status" -eq 0 ]
@@ -60,7 +72,7 @@ teardown() {
 
   taskId="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
 
-  run "$TODAY" check "$taskId"
+  run "$TODAY" finish "$taskId"
   [ "$status" -eq 0 ]
 
   run "$TODAY" out --include-context work
