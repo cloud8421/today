@@ -53,12 +53,12 @@ optsParser = info (helper <*> programOptions) description
 taskManagementCommands :: Mod CommandFields SubCommand
 taskManagementCommands =
   commandGroup "Task management:" <> listTasksCommand <> addTaskCommand <>
-  deleteTaskCommand <>
-  checkTaskCommand <>
-  cancelTaskCommand <>
+  removeTaskCommand <>
   startTaskCommand <>
   pauseTaskCommand <>
-  updateTaskTextCommand <>
+  finishTaskCommand <>
+  cancelTaskCommand <>
+  updateTaskCommand <>
   moveTaskCommand <>
   clearCommand
 
@@ -117,14 +117,14 @@ addTaskCommand = command "add" (info opts (progDesc Help.addTask))
             (long "context" <> short 'c' <> value Tasks.defaultContext <>
              help Help.contextFilter)
 
-deleteTaskCommand :: Mod CommandFields SubCommand
-deleteTaskCommand = command "delete" (info opts (progDesc Help.deleteTask))
+removeTaskCommand :: Mod CommandFields SubCommand
+removeTaskCommand = command "remove" (info opts (progDesc Help.removeTask))
   where
     opts :: Parser SubCommand
     opts = DeleteTask <$> taskIdArgument
 
-checkTaskCommand :: Mod CommandFields SubCommand
-checkTaskCommand = command "check" (info opts (progDesc Help.checkTask))
+finishTaskCommand :: Mod CommandFields SubCommand
+finishTaskCommand = command "finish" (info opts (progDesc Help.finishTask))
   where
     opts :: Parser SubCommand
     opts = CheckTask <$> taskIdArgument
@@ -147,8 +147,8 @@ pauseTaskCommand = command "pause" (info opts (progDesc Help.pauseTask))
     opts :: Parser SubCommand
     opts = PauseTask <$> taskIdArgument
 
-updateTaskTextCommand :: Mod CommandFields SubCommand
-updateTaskTextCommand = command "update" (info opts (progDesc Help.updateTask))
+updateTaskCommand :: Mod CommandFields SubCommand
+updateTaskCommand = command "update" (info opts (progDesc Help.updateTask))
   where
     opts :: Parser SubCommand
     opts = Update <$> taskIdArgument <*> many (strArgument (help Help.taskText))

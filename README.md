@@ -40,7 +40,7 @@ Features:
 5. Run `today list` and see the expanded reference below the task.
 6. Run `today in` for a today message you can paste wherever you like (references are already expanded).
 7. Start a task: `today start 2`
-8. Finish a task: `today check 2`
+8. Finish a task: `today finish 2`
 9. Rinse and repeat. At the end of the day, run `today out` for a end of the day message you can paste again wherever you like.
 10. Run `today clear` to remove all done and cancelled tasks.
 
@@ -70,11 +70,12 @@ Task management:
   add                      Add a new task. Requires a text description and
                            optionally takes a context option (--context or -c)
                            to add the task under that context.
-  delete                   Deletes an existing task by its ID.
-  check                    Check an existing task by its ID, marking it as done.
-  cancel                   Cancel an existing task by its ID.
+  remove                   Removes an existing task by its ID.
   start                    Start an existing task by its ID.
   pause                    Pause an existing task by its ID.
+  finish                   Finishes a existing task by its ID, marking it as
+                           done.
+  cancel                   Cancel an existing task by its ID.
   update                   Update an existing task with a new text description.
   move                     Move an existing task under a new context.
   clear                    Clear all done and cancelled tasks, permanently
