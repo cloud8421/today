@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0 - 20 Aug 2019
+
+- Uniform subcommands API, renaming delete -> remove, check -> finish. (#5)
+
 ## 1.0.1 - 20 Aug 2019
 
 - Use TDFA regex engine, replacing PCRE-based implementation. (#3)
