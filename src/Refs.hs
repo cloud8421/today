@@ -62,7 +62,7 @@ replaceRefs text refMap = L.foldl expandRef text (extractRefs text)
         Nothing -> t
 
 refMatcher :: String
-refMatcher = "[A-Z]+#[0-9A-Za-z]+"
+refMatcher = "[[:graph:]]+#[[:graph:]]+"
 
 buildRefUrl :: Ref -> UrlTemplate -> Text
 buildRefUrl ref urlTemplate =

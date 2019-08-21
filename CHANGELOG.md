@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add empty line after task list output. (#6)
+- Allow more relaxed formats for refs. (#7)
 
 ## 2.0 - 20 Aug 2019
 

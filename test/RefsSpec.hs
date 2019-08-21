@@ -12,9 +12,9 @@ spec =
   describe "Refs" $ do
     describe "extracting refs" $
       it "finds all tokens" $ do
-        let text = "Fix issues in CORE#123 and SERVER#456"
+        let text = "Fix issues in MAIN-CORE#123-31 and SERVER#456"
         let expectedRefs =
-              [ Refs.Ref "CORE" "123" "CORE#123"
+              [ Refs.Ref "MAIN-CORE" "123-31" "MAIN-CORE#123-31"
               , Refs.Ref "SERVER" "456" "SERVER#456"
               ]
         Refs.extractRefs text `shouldBe` expectedRefs
