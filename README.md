@@ -19,6 +19,10 @@ Efficiently manage tasks from the command line.
 
 ![tasklist](/screenshots/list.png)
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/263518.svg)](https://asciinema.org/a/263518)
+
 ## Installation
 
 Executables for Mac and Linux are available as [releases](https://github.com/cloud8421/today/releases).
