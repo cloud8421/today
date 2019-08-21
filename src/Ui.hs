@@ -174,7 +174,7 @@ refList refMap = hardline <+> indent 1 content <+> hardline
 
 taskList :: Tasks.ContextFilter -> Taskfile.Taskfile -> Elapsed -> Doc
 taskList contextFilter taskfile currentTime =
-  hardline <+> indent 1 content <+> hardline
+  hardline <+> indent 1 content <$$> hardline
   where
     contextTasks =
       Map.filter (Tasks.inContext contextFilter) (Taskfile.tasks taskfile)
