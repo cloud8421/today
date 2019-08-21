@@ -29,6 +29,7 @@ dependencies:
 - formatting
 - hourglass
 - hourglass-orphans
+- hspec
 - template
 - safe
 - optparse-applicative
@@ -71,4 +72,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hspec
+    - QuickCheck
+    - quickcheck-text
     - today
