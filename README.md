@@ -17,8 +17,6 @@ Efficiently manage tasks from the command line.
   1 done · 0 in progress · 2 pending · 0 cancelled
 ```
 
-![tasklist](/screenshots/list.png)
-
 ## Demo
 
 [![asciicast](https://asciinema.org/a/263518.svg)](https://asciinema.org/a/263518)
