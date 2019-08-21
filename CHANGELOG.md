@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Unreleased
+
+- Add empty line after task list output. (#6)
+
 ## 2.0 - 20 Aug 2019
 
 - Uniform subcommands API, renaming delete -> remove, check -> finish. (#5)
