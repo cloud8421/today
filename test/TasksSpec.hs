@@ -5,6 +5,7 @@ module TasksSpec
   ) where
 
 import Control.Monad.Reader (runReaderT)
+import qualified Data.Map.Strict as Map
 import Data.Text.Arbitrary ()
 import qualified Tasks
 import Test.Hspec
@@ -64,6 +65,13 @@ spec =
            Tasks.countByStatus Tasks.Progress tasks +
            Tasks.countByStatus Tasks.Done tasks +
            Tasks.countByStatus Tasks.Cancelled tasks ==
+           Tasks.totalCount tasks)
+    describe "grouping tasks" $
+      prop "group by context" $
+      forAll
+        genTasks
+        (\tasks ->
+           Map.size (Map.foldl Map.union Map.empty (Tasks.groupByContext tasks)) ==
            Tasks.totalCount tasks)
 
 genTasks :: Gen Tasks.Tasks
