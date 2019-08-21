@@ -19,6 +19,14 @@ Efficiently manage tasks from the command line.
 
 ![tasklist](/screenshots/list.png)
 
+## Installation
+
+Executables for Mac and Linux are available as [releases](https://github.com/cloud8421/today/releases).
+
+Download the file for your architecture and decompress the archive.
+
+Then `chmod +x today` and move the executable somewhere in your `$PATH`.
+
 ## Usage
 
 Today is a command line task manager that heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
