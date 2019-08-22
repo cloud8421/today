@@ -46,12 +46,13 @@ spec =
         it "updates the task status" $ do
           let tasks = Tasks.add "Example" "work" mempty currentTime
           Tasks.countByStatus Tasks.Pending tasks `shouldBe` 1
-          let Right newTasks =
-                runReaderT
-                  (Tasks.updateStatus Tasks.Progress 1 tasks)
-                  currentTime
-          Tasks.countByStatus Tasks.Pending newTasks `shouldBe` 0
-          Tasks.countByStatus Tasks.Progress newTasks `shouldBe` 1
+          case runReaderT
+                 (Tasks.updateStatus Tasks.Progress 1 tasks)
+                 currentTime of
+            Right newTasks -> do
+              Tasks.countByStatus Tasks.Pending newTasks `shouldBe` 0
+              Tasks.countByStatus Tasks.Progress newTasks `shouldBe` 1
+            Left _error -> expectationFailure "Malformed tasks"
       context "for a non existing task" $
         it "returns an error" $
         runReaderT (Tasks.updateStatus Tasks.Progress 1 mempty) currentTime `shouldBe`
