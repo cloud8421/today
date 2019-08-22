@@ -77,7 +77,7 @@ listRefs :: String
 listRefs = "List all configured ref replacement rules."
 
 addRef :: String
-addRef = "Add a new ref replacement rule"
+addRef = "Add a new ref replacement rule."
 
 deleteRef :: String
 deleteRef = "Delete an existing ref replacement rule by its repo."

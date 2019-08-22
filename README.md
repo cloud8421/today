@@ -102,7 +102,7 @@ Reporters:
 
 Refs management:
   refs                     List all configured ref replacement rules.
-  set-ref                  Add a new ref replacement rule
+  set-ref                  Add a new ref replacement rule.
   delete-ref               Delete an existing ref replacement rule by its repo.
 ```
 
