@@ -21,17 +21,9 @@ Efficiently manage tasks from the command line.
 
 [![asciicast](https://asciinema.org/a/263518.svg)](https://asciinema.org/a/263518)
 
-## Installation
+## Philosophy
 
-Executables for Mac and Linux are available as [releases](https://github.com/cloud8421/today/releases).
-
-Download the file for your architecture and decompress the archive.
-
-Then `chmod +x today` and move the executable somewhere in your `$PATH`.
-
-## Usage
-
-Today is a command line task manager that heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
+Today heavily borrows from [taskbook](https://github.com/klaussinani/taskbook).
 
 Features:
 
@@ -41,7 +33,7 @@ Features:
 - Two commands, `in` and `out`, which output the list of tasks to a format that can be pasted to Slack.
 - All data written to a single file, which can be put in Dropbox etc.
 
-## Example flow
+## Usage example
 
 1. You can start with `today list` to see the default content.
 2. Add a task with `today add "Email triage"`.
@@ -53,6 +45,14 @@ Features:
 8. Finish a task: `today finish 2`
 9. Rinse and repeat. At the end of the day, run `today out` for a end of the day message you can paste again wherever you like.
 10. Run `today clear` to remove all done and cancelled tasks.
+
+## Installation
+
+Executables for Mac and Linux are available as [releases](https://github.com/cloud8421/today/releases).
+
+Download the file for your architecture and decompress the archive.
+
+Then `chmod +x today` and move the executable somewhere in your `$PATH`.
 
 ## Managing the taskfile
 
