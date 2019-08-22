@@ -9,9 +9,11 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
+import Data.Version (showVersion)
 import qualified Help
 import Options.Applicative
 import Options.Applicative.Help.Pretty (Doc, putDoc)
+import Paths_today (version)
 import qualified Refs
 import System.Hourglass (timeCurrent)
 import qualified Taskfile
@@ -40,7 +42,7 @@ data SubCommand
   | DeleteRef Refs.Service
 
 optsParser :: ParserInfo Opts
-optsParser = info (helper <*> programOptions) description
+optsParser = info (helper <*> versionOption <*> programOptions) description
   where
     description :: InfoMod Opts
     description = fullDesc <> progDesc Help.progDesc <> header Help.progHeader
@@ -49,6 +51,12 @@ optsParser = info (helper <*> programOptions) description
       Opts <$> taskFilePathOption <*>
       (hsubparser taskManagementCommands <|> hsubparser reporterCommands <|>
        hsubparser refManagementCommands)
+
+versionOption :: Parser (a -> a)
+versionOption =
+  infoOption
+    (showVersion version)
+    (long "version" <> short 'v' <> help "Show version and exit.")
 
 taskManagementCommands :: Mod CommandFields SubCommand
 taskManagementCommands =

@@ -11,6 +11,12 @@ teardown() {
   popd || exit
 }
 
+@test "displays version number" {
+  run "$TODAY" --version
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "2.0" ]]
+}
+
 @test "use the default taskfile" {
   run "$TODAY" list
   [ "$status" -eq 0 ]
