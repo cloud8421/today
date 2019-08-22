@@ -60,7 +60,7 @@ spec =
     describe "counting tasks" $
       prop "counts by status" $
       forAll
-        genTasks
+        (arbitrary :: Gen Tasks.Tasks)
         (\tasks ->
            Tasks.countByStatus Tasks.Pending tasks +
            Tasks.countByStatus Tasks.Progress tasks +
@@ -70,10 +70,7 @@ spec =
     describe "grouping tasks" $
       prop "group by context" $
       forAll
-        genTasks
+        (arbitrary :: Gen Tasks.Tasks)
         (\tasks ->
            Map.size (Map.foldl Map.union Map.empty (Tasks.groupByContext tasks)) ==
            Tasks.totalCount tasks)
-
-genTasks :: Gen Tasks.Tasks
-genTasks = arbitrary
