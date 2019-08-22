@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 2.0.1 - 22 Aug 2019
 
 - Add empty line after task list output. (#6)
 - Allow more relaxed formats for refs. (#7)
