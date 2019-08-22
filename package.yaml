@@ -29,7 +29,6 @@ dependencies:
 - formatting
 - hourglass
 - hourglass-orphans
-- hspec
 - template
 - safe
 - optparse-applicative
