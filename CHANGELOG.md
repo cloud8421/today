@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Unreleased
+
+- Add `--version` option to display version and exit. (#8)
+
 ## 2.0.1 - 22 Aug 2019
 
 - Add empty line after task list output. (#6)
