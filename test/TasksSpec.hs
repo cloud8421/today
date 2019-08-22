@@ -72,5 +72,7 @@ spec =
       forAll
         (arbitrary :: Gen Tasks.Tasks)
         (\tasks ->
-           Map.size (Map.foldl Map.union Map.empty (Tasks.groupByContext tasks)) ==
-           Tasks.totalCount tasks)
+           let sumOfTasksCountByContext =
+                 Map.size
+                   (Map.foldl Map.union Map.empty (Tasks.groupByContext tasks))
+            in sumOfTasksCountByContext == Tasks.totalCount tasks)
