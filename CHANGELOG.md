@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 2.0.2 - 23 Aug 2019
 
 - Add linebreak after in/out output. (#9)
 - Add `--version` option to display version and exit. (#8)
