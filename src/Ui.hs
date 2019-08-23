@@ -184,16 +184,16 @@ taskList contextFilter taskfile currentTime =
     content = render $ TaskList tgs (Stats contextTasks)
 
 today :: Tasks.ContextFilter -> Taskfile.Taskfile -> Doc
-today contextFilter taskfile =
-  render (Today Beginning todayTasks (Taskfile.refs taskfile))
+today contextFilter taskfile = content <+> hardline
   where
+    content = render (Today Beginning todayTasks (Taskfile.refs taskfile))
     todayTask t = Tasks.takenOver t && Tasks.inContext contextFilter t
     todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
 
 outForToday :: Tasks.ContextFilter -> Taskfile.Taskfile -> Doc
-outForToday contextFilter taskfile =
-  render (Today End todayTasks (Taskfile.refs taskfile))
+outForToday contextFilter taskfile = content <+> hardline
   where
+    content = render (Today End todayTasks (Taskfile.refs taskfile))
     todayTask t = Tasks.started t && Tasks.inContext contextFilter t
     todayTasks = Map.filter todayTask (Taskfile.tasks taskfile)
 

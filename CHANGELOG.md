@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add linebreak after in/out output. (#9)
 - Add `--version` option to display version and exit. (#8)
 
 ## 2.0.1 - 22 Aug 2019
