@@ -9,12 +9,14 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (MonadReader, ask, runReaderT)
 import Data.Semigroup ((<>))
 import Data.Text as T
+import Data.Time.Clock (getCurrentTime)
 import Data.Version (showVersion)
 import qualified Help
 import Options.Applicative
 import Options.Applicative.Help.Pretty (Doc, putDoc)
 import Paths_today (version)
 import qualified Refs
+import qualified Store
 import System.Hourglass (timeCurrent)
 import qualified Taskfile
 import qualified Tasks
@@ -262,6 +264,8 @@ view sc taskfile = do
 
 executeCommand :: IO ()
 executeCommand = do
+  utcCurrentTime <- liftIO getCurrentTime
+  _result <- liftIO $ Store.seed utcCurrentTime
   Opts taskFilePath subCommand <-
     customExecParser (prefs $ disambiguate <> showHelpOnEmpty) optsParser
   currentTime <- liftIO timeCurrent

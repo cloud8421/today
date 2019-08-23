@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/clou
 dependencies:
 - base >= 4.7 && < 5
 - aeson
+- aeson-casing
 - ansi-terminal
 - bytestring
 - directory
@@ -32,6 +33,9 @@ dependencies:
 - template
 - safe
 - optparse-applicative
+- persistent
+- persistent-sqlite
+- persistent-template
 - regex-tdfa
 - regex-tdfa-text
 - sort

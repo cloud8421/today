@@ -3,3 +3,4 @@ today.cabal
 *~
 tasks.json
 .envrc
+*.db
