@@ -2,6 +2,8 @@
 
 TODAY=~/.local/bin/today
 
+load test_helper
+
 setup() {
   pushd "$BATS_TMPDIR" || exit
   rm tasks.json || true
@@ -15,86 +17,81 @@ teardown() {
 
 @test "displays version number" {
   run "$TODAY" --version
-  [ "$status" -eq 0 ]
-  [[ "$output" =~ "2.0" ]]
+  assert_success
+  assert_output_contains "2.0"
 }
 
 @test "use the default taskfile" {
   run "$TODAY" list
-  [ "$status" -eq 0 ]
-
-  taskfile="$(ls tasks.json)"
-  [ "$taskfile" = "tasks.json" ]
+  assert_success
+  assert_file_exists "tasks.json"
 }
 
 @test "use a custom taskfile via a flag" {
   run "$TODAY" -f flag.json list
-  [ "$status" -eq 0 ]
-
-  taskfile="$(ls flag.json)"
-  [ "$taskfile" = "flag.json" ]
+  assert_success
+  assert_file_exists "flag.json"
 }
 
 @test "use a custom taskfile via an environment variable" {
   TASKFILE=env-variable.json run "$TODAY" list
-  [ "$status" -eq 0 ]
-
-  taskfile="$(ls env-variable.json)"
-  [ "$taskfile" = "env-variable.json" ]
+  assert_success
+  assert_file_exists "env-variable.json"
 }
 
 @test "add a task, browse tasks in contexts" {
   run "$TODAY" add --context work "Do something"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run "$TODAY" list --include-context work
-  [[ "$output" =~ "Do something" ]]
+  assert_output_contains "Do something"
 
   run "$TODAY" list --exclude-context work
-  [[ ! "$output" =~ "Do something" ]]
+  assert_output_doesnt_contain "Do something"
 }
 
 @test "add a task, remove a task" {
   run "$TODAY" add --context work "Do something"
-  [ "$status" -eq 0 ]
+  assert_success
 
-  taskId="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+  task_id="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
 
-  run "$TODAY" remove "$taskId"
+  run "$TODAY" remove "$task_id"
+  assert_success
 
   run "$TODAY" list
-  [[ ! "$output" =~ "Do something" ]]
+  assert_output_doesnt_contain "Do something"
 }
 
 @test "add a task, generate a today in message" {
   run "$TODAY" add --context work "Do something"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run "$TODAY" in --include-context work
-  [[ "$output" =~ ":hourglass: Do something" ]]
+  assert_output_contains ":hourglass: Do something"
 }
 
 @test "add a task, complete it and generate a today out message" {
   run "$TODAY" add --context work "Do something"
-  [ "$status" -eq 0 ]
+  assert_success
 
-  taskId="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+  task_id="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
 
-  run "$TODAY" finish "$taskId"
-  [ "$status" -eq 0 ]
+  run "$TODAY" finish "$task_id"
+  assert_success
 
   run "$TODAY" out --include-context work
-  [[ "$output" =~ ":white_check_mark: Do something" ]]
+  assert_output_contains ":white_check_mark: Do something"
 }
 
 @test "setting and expanding refs" {
   run "$TODAY" add --context work "Fix issue SUPPORT#123"
-  [ "$status" -eq 0 ]
-  [[ ! "$output" =~ "https://example.zendesk.com/issues/123" ]]
+  assert_success
+  assert_output_doesnt_contain "https://example.zendesk.com/issues/123"
 
   run "$TODAY" set-ref SUPPORT 'https://example.zendesk.com/issues/$id'
-  [ "$status" -eq 0 ]
+  assert_success
 
   run "$TODAY" list
-  [[ "$output" =~ "https://example.zendesk.com/issues/123" ]]
+  assert_output_contains "https://example.zendesk.com/issues/123"
 }
