@@ -5,6 +5,8 @@ TODAY=~/.local/bin/today
 setup() {
   pushd "$BATS_TMPDIR" || exit
   rm tasks.json || true
+  rm flag.json || true
+  rm env-variable.json || true
 }
 
 teardown() {
