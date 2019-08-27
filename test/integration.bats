@@ -127,3 +127,20 @@ teardown() {
   run "$TODAY" list
   assert_output_contains "https://example.zendesk.com/issues/123"
 }
+
+@test "refs: setting and unsetting a ref" {
+  run "$TODAY" refs
+  assert_success
+  assert_output_doesnt_contain "SUPPORT"
+  assert_output_doesnt_contain "https://example.zendesk.com/issues/123"
+
+  run "$TODAY" set-ref SUPPORT 'https://example.zendesk.com/issues/$id'
+  assert_success
+  assert_output_contains "SUPPORT"
+  assert_output_contains 'https://example.zendesk.com/issues/$id'
+
+  run "$TODAY" delete-ref SUPPORT
+  assert_success
+  assert_output_doesnt_contain "SUPPORT"
+  assert_output_doesnt_contain "https://example.zendesk.com/issues/123"
+}
