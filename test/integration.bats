@@ -63,6 +63,24 @@ teardown() {
   assert_output_doesnt_contain "Do something"
 }
 
+@test "tasks: add and move" {
+  run "$TODAY" add --context work "Do something"
+  assert_success
+
+  task_id="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+
+  run "$TODAY" list --include-context work
+  assert_output_contains "Do something"
+
+  run "$TODAY" move "$task_id" home
+  assert_success
+  run "$TODAY" list --include-context home
+  assert_output_contains "Do something"
+
+  run "$TODAY" list --include-context work
+  assert_output_doesnt_contain "Do something"
+}
+
 @test "tasks: add and generate today in message" {
   run "$TODAY" add --context work "Do something"
   assert_success
@@ -82,6 +100,20 @@ teardown() {
 
   run "$TODAY" out --include-context work
   assert_output_contains ":white_check_mark: Do something"
+}
+
+@test "tasks: add, complete and clear" {
+  run "$TODAY" add --context work "Do something"
+  assert_success
+
+  task_id="$(echo "$output" | grep "Do something" | awk '{ print substr($2, 1, length($2)-1) }')"
+
+  run "$TODAY" finish "$task_id"
+  assert_success
+  assert_output_contains "Do something"
+
+  run "$TODAY" clear
+  assert_output_doesnt_contain "Do something"
 }
 
 @test "refs: setting and expanding a ref" {
