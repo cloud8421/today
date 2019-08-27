@@ -83,3 +83,10 @@ assert_file_exists() {
     flunk "File $filename does not exist"
   fi
 }
+
+rm_if_exists() {
+  local filename="$1"
+  if [ -f "$filename" ]; then
+    rm "$filename"
+  fi
+}

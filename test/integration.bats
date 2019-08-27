@@ -6,9 +6,9 @@ load test_helper
 
 setup() {
   pushd "$BATS_TMPDIR" || exit
-  rm tasks.json || true
-  rm flag.json || true
-  rm env-variable.json || true
+  rm_if_exists "tasks.json"
+  rm_if_exists "flag.json"
+  rm_if_exists "env-variable.json"
 }
 
 teardown() {
