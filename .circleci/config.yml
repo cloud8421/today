@@ -12,13 +12,13 @@ jobs:
             - today-v3-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
-          command: stack --no-terminal setup
+          command: make ci.setup
       - run:
-          name: Run tests
-          command: stack --no-terminal test
+          name: Run unit tests
+          command: make ci.test-unit
       - run:
           name: Install executable
-          command: stack --no-terminal install
+          command: make ci.install
       - save_cache:
           name: Cache Dependencies
           key: today-v3-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
@@ -33,17 +33,11 @@ jobs:
       - image: fpco/stack-build-small:lts
     steps:
       - checkout
-      - run:
-          name: Install Bats
-          command: |
-            git clone https://github.com/bats-core/bats-core.git
-            cd bats-core
-            ./install.sh /usr/local
       - attach_workspace:
           at: ~/.local
       - run:
-          name: Integration tests
-          command: bats test/
+          name: Run Integration tests
+          command: make ci.test-integration
       - store_artifacts:
           path: ~/.local/bin/today
           destination: today
