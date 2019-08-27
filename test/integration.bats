@@ -15,31 +15,31 @@ teardown() {
   popd || exit
 }
 
-@test "displays version number" {
+@test "general: displays version number" {
   run "$TODAY" --version
   assert_success
   assert_output_contains "2.0"
 }
 
-@test "use the default taskfile" {
+@test "taskfile: uses default" {
   run "$TODAY" list
   assert_success
   assert_file_exists "tasks.json"
 }
 
-@test "use a custom taskfile via a flag" {
+@test "taskfile: supports flag" {
   run "$TODAY" -f flag.json list
   assert_success
   assert_file_exists "flag.json"
 }
 
-@test "use a custom taskfile via an environment variable" {
+@test "taskfile: supports environment variable" {
   TASKFILE=env-variable.json run "$TODAY" list
   assert_success
   assert_file_exists "env-variable.json"
 }
 
-@test "add a task, browse tasks in contexts" {
+@test "tasks: add and browse context" {
   run "$TODAY" add --context work "Do something"
   assert_success
 
@@ -50,7 +50,7 @@ teardown() {
   assert_output_doesnt_contain "Do something"
 }
 
-@test "add a task, remove a task" {
+@test "tasks: add and remove" {
   run "$TODAY" add --context work "Do something"
   assert_success
 
@@ -63,7 +63,7 @@ teardown() {
   assert_output_doesnt_contain "Do something"
 }
 
-@test "add a task, generate a today in message" {
+@test "tasks: add and generate today in message" {
   run "$TODAY" add --context work "Do something"
   assert_success
 
@@ -71,7 +71,7 @@ teardown() {
   assert_output_contains ":hourglass: Do something"
 }
 
-@test "add a task, complete it and generate a today out message" {
+@test "tasks: add, complete and generate today out message" {
   run "$TODAY" add --context work "Do something"
   assert_success
 
@@ -84,7 +84,7 @@ teardown() {
   assert_output_contains ":white_check_mark: Do something"
 }
 
-@test "setting and expanding refs" {
+@test "refs: setting and expanding a ref" {
   run "$TODAY" add --context work "Fix issue SUPPORT#123"
   assert_success
   assert_output_doesnt_contain "https://example.zendesk.com/issues/123"
