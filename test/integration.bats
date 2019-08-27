@@ -86,3 +86,15 @@ teardown() {
   run "$TODAY" out --include-context work
   [[ "$output" =~ ":white_check_mark: Do something" ]]
 }
+
+@test "setting and expanding refs" {
+  run "$TODAY" add --context work "Fix issue SUPPORT#123"
+  [ "$status" -eq 0 ]
+  [[ ! "$output" =~ "https://example.zendesk.com/issues/123" ]]
+
+  run "$TODAY" set-ref SUPPORT 'https://example.zendesk.com/issues/$id'
+  [ "$status" -eq 0 ]
+
+  run "$TODAY" list
+  [[ "$output" =~ "https://example.zendesk.com/issues/123" ]]
+}
