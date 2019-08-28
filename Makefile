@@ -77,5 +77,7 @@ ifneq ($(shell help2man --version >/dev/null 2>&1 ; echo $$?),0)
 	brew install help2man
 endif
 else
+ifneq ($(shell help2man --version >/dev/null 2>&1 ; echo $$?),0)
 	apt-get install --yes help2man
+endif
 endif
