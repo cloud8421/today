@@ -30,7 +30,7 @@ test-unit:
 	stack test
 .PHONY: test-unit
 
-test-integration: bats
+test-integration: /usr/local/bin/bats
 	bats test
 .PHONY: test-integration
 
@@ -42,7 +42,7 @@ ci.test-unit:
 	stack --no-terminal test
 .PHONY: ci.test-unit
 
-ci.test-integration: bats
+ci.test-integration: /usr/local/bin/bats
 	bats -t test
 .PHONY: ci.test-integration
 
@@ -58,15 +58,17 @@ ci.install:
 ############################# TOOLS #############################
 #################################################################
 
-bats:
+/usr/local/bin/bats:
 ifeq ($(SYSTEM),Darwin)
 ifneq ($(shell bats --version >/dev/null 2>&1 ; echo $$?),0)
 	brew install bats-core
 endif
 else
+ifneq ($(shell bats --version >/dev/null 2>&1 ; echo $$?),0)
 	git clone https://github.com/bats-core/bats-core.git /tmp/bats
 	cd /tmp/bats && ./install.sh /usr/local
 	rm -rf /tmp/bats
+endif
 endif
 
 help2man:
