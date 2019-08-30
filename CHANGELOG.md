@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.4 - 30 Aug 2019
+
+- Fix wrong indentation inside in/out reporters. (#12)
+
 ## 2.0.3 - 30 Aug 2019
 
 - Include blank lines inside in/out reporters to improve readability. (#11)
