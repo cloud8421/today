@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.3 - 30 Aug 2019
+
+- Include blank lines inside in/out reporters to improve readability. (#11)
+
 ## 2.0.2 - 23 Aug 2019
 
 - Add linebreak after in/out output. (#9)
