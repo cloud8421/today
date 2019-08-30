@@ -161,12 +161,12 @@ instance Render Today where
   render (Today scope tasks refMap)
     | Map.null tasks = "No tasks available"
     | otherwise =
-      render scope <$$> hardline <+> vsep (map todayLine (Map.toList tasks))
+      render scope <$$> hardline <> vsep (map todayLine (Map.toList tasks))
     where
       todayLine (_id, t) =
         "•" <+>
         render (StatusLabel (Tasks.status t)) <+>
-        text (Text.unpack $ Refs.replaceRefs (Tasks.text t) refMap) <+> hardline
+        text (Text.unpack $ Refs.replaceRefs (Tasks.text t) refMap) <> hardline
 
 refList :: Refs.RefMap -> Doc
 refList refMap = hardline <+> indent 1 content <+> hardline
