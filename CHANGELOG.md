@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Unreleased
+
+- Add `reset-ids` command, which resets all task ids, restarting from 1 and
+  ordering from oldest to newest. (#14)
+
 ## 2.0.4 - 30 Aug 2019
 
 - Fix wrong indentation inside in/out reporters. (#12)

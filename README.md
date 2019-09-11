@@ -65,11 +65,12 @@ By default, Today searches for a `tasks.json` file in the current directory, cre
 ```
 TODAY - CLI Task Manager : Efficiently manage tasks from the command line
 
-Usage: today [-f|--taskfile TASKFILE] COMMAND
+Usage: today [-v|--version] [-f|--taskfile TASKFILE] COMMAND
   TODAY - CLI Task Manager
 
 Available options:
   -h,--help                Show this help text
+  -v,--version             Show version and exit.
   -f,--taskfile TASKFILE   The path of the Taskfile to use. Can be replaced by a
                            TASKFILE environment variable, which takes precedence
                            over the option. (default: "./tasks.json")
@@ -88,6 +89,8 @@ Task management:
   cancel                   Cancel an existing task by its ID.
   update                   Update an existing task with a new text description.
   move                     Move an existing task under a new context.
+  reset-ids                Resets all task ids, restarting from 1 and ordering
+                           from oldest to newest.
   clear                    Clear all done and cancelled tasks, permanently
                            deleting them from the Taskfile.
 

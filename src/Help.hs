@@ -61,6 +61,10 @@ updateTask = "Update an existing task with a new text description."
 moveTask :: String
 moveTask = "Move an existing task under a new context."
 
+resetIds :: String
+resetIds =
+  "Resets all task ids, restarting from 1 and ordering from oldest to newest."
+
 clearTasks :: String
 clearTasks =
   "Clear all done and cancelled tasks, permanently deleting them from the Taskfile."

@@ -116,6 +116,22 @@ teardown() {
   assert_output_doesnt_contain "Do something"
 }
 
+@test "tasks: reset ids" {
+  run "$TODAY" add --context work "First task"
+  run "$TODAY" add --context work "Second task"
+
+  first_task_id="$(echo "$output" | grep "First" | awk '{ print substr($2, 1, length($2)-1) }')"
+  second_task_id="$(echo "$output" | grep "Second" | awk '{ print substr($2, 1, length($2)-1) }')"
+
+  run "$TODAY" remove "$first_task_id"
+  assert_success
+  assert_output_contains "$second_task_id."
+
+  run "$TODAY" reset-ids
+  assert_output_contains "Second"
+  assert_output_doesnt_contain "$second_task_id."
+}
+
 @test "refs: setting and expanding a ref" {
   run "$TODAY" add --context work "Fix issue SUPPORT#123"
   assert_success
