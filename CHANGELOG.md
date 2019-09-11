@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 2.1 - 11 Sep 2019
 
 - Add `reset-ids` command, which resets all task ids, restarting from 1 and
   ordering from oldest to newest. (#14)

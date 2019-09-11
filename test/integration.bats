@@ -18,7 +18,7 @@ teardown() {
 @test "general: displays version number" {
   run "$TODAY" --version
   assert_success
-  assert_output_contains "2.0"
+  assert_output_contains "2.1"
 }
 
 @test "taskfile: uses default" {
