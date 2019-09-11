@@ -12,6 +12,7 @@ import Data.Hourglass (timeDiff)
 import Data.Hourglass.Types.Orphans ()
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map, member)
+import qualified Data.Sort as Sort
 import Data.Text (Text)
 import GHC.Generics
 import Refs (Ref, extractRefs)
@@ -63,6 +64,11 @@ remove = flip Map.delete
 
 clearCompleted :: Tasks -> Tasks
 clearCompleted = Map.filter (\t -> status t `elem` [Pending, Progress])
+
+resetIds :: Tasks -> Tasks
+resetIds tasks = Map.fromList $ zip [1 ..] orderedTasks
+  where
+    orderedTasks = Sort.sortOn lastUpdate (Map.elems tasks)
 
 updateTask ::
      (MonadError String m, MonadReader Elapsed m)

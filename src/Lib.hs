@@ -35,6 +35,7 @@ data SubCommand
   | Update Tasks.TaskId [Text]
   | Move Tasks.TaskId Tasks.Context
   | Clear
+  | ResetIds
   | InForToday Tasks.ContextFilter
   | OutForToday Tasks.ContextFilter
   | ListRefs
@@ -68,6 +69,7 @@ taskManagementCommands =
   cancelTaskCommand <>
   updateTaskCommand <>
   moveTaskCommand <>
+  resetIdsCommand <>
   clearCommand
 
 reporterCommands :: Mod CommandFields SubCommand
@@ -167,6 +169,10 @@ moveTaskCommand = command "move" (info opts (progDesc Help.moveTask))
     opts :: Parser SubCommand
     opts = Move <$> taskIdArgument <*> strArgument (help Help.contextMove)
 
+resetIdsCommand :: Mod CommandFields SubCommand
+resetIdsCommand =
+  command "reset-ids" (info (pure ResetIds) (progDesc Help.resetIds))
+
 clearCommand :: Mod CommandFields SubCommand
 clearCommand = command "clear" (info (pure Clear) (progDesc Help.clearTasks))
 
@@ -236,6 +242,8 @@ update sc taskfile =
         Move taskId context ->
           Taskfile.updateTasks taskfile <$>
           Tasks.updateContext context taskId currentTasks
+        ResetIds -> pure (Taskfile.updateTasks taskfile newTasks)
+          where newTasks = Tasks.resetIds currentTasks
         Clear -> pure (Taskfile.updateTasks taskfile newTasks)
           where newTasks = Tasks.clearCompleted currentTasks
         InForToday _maybeContext -> pure taskfile
