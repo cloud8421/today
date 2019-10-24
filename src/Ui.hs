@@ -93,7 +93,7 @@ instance Render TaskRefs where
   render (TaskRefs task refMap) =
     case Tasks.refs task of
       [] -> empty
-      someRefs -> hardline <+> vsep (map taskRefItem someRefs)
+      someRefs -> hardline <+> align (vsep (map taskRefItem someRefs))
     where
       taskRefItem ref =
         "|" <+>
