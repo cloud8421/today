@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 2.1.1 - 24 Oct 2019
 
 - Fix alignment of multiple refs when displaying task list. (#15)
 
